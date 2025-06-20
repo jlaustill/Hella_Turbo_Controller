@@ -44,6 +44,16 @@ env/
 ehthumbs.db
 Thumbs.db
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+*.tsbuildinfo
+dist-electron/
+
 # Project specific
 test.bin
 *.log
