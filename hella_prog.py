@@ -1,104 +1,271 @@
 #!/usr/bin/python3
+"""
+Hella Turbo Controller Programming Interface
+
+This module provides a Python interface for programming the Hella Universal
+turbo actuator I using CAN bus communication.
+"""
 
 import can
 import time
 import datetime
 import sys
+import logging
+from typing import Optional, List, Tuple
 
-now = datetime.datetime.now()
+# CAN Message IDs
+REQUEST_ID = 0x3F0
+MEMORY_RESPONSE_ID = 0x3E8
+POSITION_RESPONSE_ID = 0x3EA
+ACK_RESPONSE_ID = 0x3EB
 
-#interface = can.interfaces.socketcan.SocketcanBus('slcan0')
-#interface = can.interfaces.slcan.slcanbBus('/dev/ttyACM0', bitrate=500000)
+# Message constants
+REQUEST_MSG = bytearray([0x49, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+MEMORY_SIZE = 128
+DEFAULT_TIMEOUT = 1.0
+MESSAGE_DELAY = 0.02
 
-class hella_prog:
-    def __init__(self, channel, interface):
-        self.interface = can.interface.Bus(channel=channel, interface=interface, bitrate=500000,  ttyBaudrate=128000)
-        self.msg_req = can.Message(extended_id=False,arbitration_id=0x3F0,data=bytearray([0x49,0x00,0x00,0x00,0x00,0x00,0x00,0x00]))
+# Position calculation constants
+HARDCODED_Z_VALUE = 99  # TODO: Implement proper calculation
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class HellaProgError(Exception):
+    """Custom exception for Hella programming errors."""
+    pass
+
+
+class HellaProg:
+    """Interface for programming Hella Universal turbo actuator I."""
     
-    def readmemory(self):
-        self.interface.send(self.msg_req)
-        answer = self.interface.recv(1)
-        with open(now.strftime('%Y%m%d-%H%M%S.bin'),'wb') as fn:
-            for n in range(128):
-                while answer is not None and answer.arbitration_id != 0x3EB and answer.data[7] != 0x53:
-                    answer = self.interface.recv(1)
-                msg = can.Message(extended_id=False,arbitration_id=0x3F0,data=bytearray([0x31,0x0C,n,0x00,0x00,0x00,0x00,0x00]))
-                self.interface.send(msg)
-                answer = self.interface.recv(1)
-                while answer is not None:
-                    if answer.arbitration_id == 0x3E8:
-                        print('%02X: %02X'%(n,answer.data[0]))
-                        sys.stdout.flush()
-                        fn.write(bytes([answer.data[0]]))
-                        break
-                    answer = self.interface.recv(1)
+    def __init__(self, channel: str, interface: str, bitrate: int = 500000, tty_baudrate: int = 128000):
+        """
+        Initialize the Hella programmer.
+        
+        Args:
+            channel: CAN channel (e.g., 'can0', '/dev/ttyACM0')
+            interface: CAN interface type ('socketcan', 'slcan')
+            bitrate: CAN bus bitrate (default: 500000)
+            tty_baudrate: TTY baudrate for SLCAN (default: 128000)
+        """
+        try:
+            self.interface = can.interface.Bus(
+                channel=channel,
+                interface=interface,
+                bitrate=bitrate,
+                ttyBaudrate=tty_baudrate
+            )
+            self.msg_req = can.Message(
+                is_extended_id=False,
+                arbitration_id=REQUEST_ID,
+                data=REQUEST_MSG
+            )
+            logger.info(f"Initialized CAN interface: {interface} on {channel}")
+        except Exception as e:
+            raise HellaProgError(f"Failed to initialize CAN interface: {e}")
     
-    def readmax(self):
+    def _wait_for_ack(self, timeout: float = DEFAULT_TIMEOUT) -> Optional[can.Message]:
+        """Wait for acknowledgment message."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            answer = self.interface.recv(0.1)
+            if answer is not None and answer.arbitration_id == ACK_RESPONSE_ID:
+                if len(answer.data) >= 8 and answer.data[7] == 0x53:
+                    return answer
+        return None
+    
+    def _send_request_and_wait(self, timeout: float = DEFAULT_TIMEOUT) -> None:
+        """Send request message and wait for acknowledgment."""
         self.interface.send(self.msg_req)
-        answer = self.interface.recv(1)
-        if True:
-            for n in [5,6]:
-                firstanswer = int(answer.data[0])
-                while answer is not None and answer.arbitration_id != 0x3EB and answer.data[7] != 0x53:
-                    answer = self.interface.recv(1)
-                msg = can.Message(extended_id=False,arbitration_id=0x3F0,data=bytearray([0x31,0x0C,n,0x00,0x00,0x00,0x00,0x00]))
-                self.interface.send(msg)
-                answer = self.interface.recv(1)
-                while answer is not None:
-                    if answer.arbitration_id == 0x3E8:
+        if not self._wait_for_ack(timeout):
+            raise HellaProgError("No acknowledgment received for request")
+    
+    def readmemory(self, filename: Optional[str] = None) -> str:
+        """
+        Read the complete memory from the actuator and save to a binary file.
+        
+        Args:
+            filename: Optional filename for the binary dump. If None, generates timestamp-based name.
+            
+        Returns:
+            The filename of the saved binary dump.
+            
+        Raises:
+            HellaProgError: If memory reading fails.
+        """
+        if filename is None:
+            timestamp = datetime.datetime.now()
+            filename = timestamp.strftime('%Y%m%d-%H%M%S.bin')
+        
+        logger.info(f"Reading memory to file: {filename}")
+        
+        try:
+            self._send_request_and_wait()
+            
+            with open(filename, 'wb') as fn:
+                for n in range(MEMORY_SIZE):
+                    # Send memory read command for address n
+                    msg = can.Message(
+                        is_extended_id=False,
+                        arbitration_id=REQUEST_ID,
+                        data=bytearray([0x31, 0x0C, n, 0x00, 0x00, 0x00, 0x00, 0x00])
+                    )
+                    self.interface.send(msg)
+                    
+                    # Wait for memory response
+                    start_time = time.time()
+                    while time.time() - start_time < DEFAULT_TIMEOUT:
+                        answer = self.interface.recv(0.1)
+                        if answer is not None and answer.arbitration_id == MEMORY_RESPONSE_ID:
+                            if len(answer.data) > 0:
+                                logger.debug(f'Memory[{n:02X}]: {answer.data[0]:02X}')
+                                fn.write(bytes([answer.data[0]]))
+                                break
+                        elif answer is not None:
+                            # Consume other messages
+                            continue
+                    else:
+                        raise HellaProgError(f"No memory response for address {n:02X}")
+            
+            logger.info(f"Memory dump completed: {filename}")
+            return filename
+            
+        except Exception as e:
+            raise HellaProgError(f"Memory read failed: {e}")
+    
+    def _read_position_value(self, addresses: List[int]) -> int:
+        """
+        Read position values from specified memory addresses.
+        
+        Args:
+            addresses: List of memory addresses to read (typically 2 bytes for 16-bit value)
+            
+        Returns:
+            Combined 16-bit position value
+        """
+        self._send_request_and_wait()
+        
+        values = []
+        for addr in addresses:
+            msg = can.Message(
+                is_extended_id=False,
+                arbitration_id=REQUEST_ID,
+                data=bytearray([0x31, 0x0C, addr, 0x00, 0x00, 0x00, 0x00, 0x00])
+            )
+            self.interface.send(msg)
+            
+            # Wait for response
+            start_time = time.time()
+            while time.time() - start_time < DEFAULT_TIMEOUT:
+                answer = self.interface.recv(0.1)
+                if answer is not None and answer.arbitration_id == MEMORY_RESPONSE_ID:
+                    if len(answer.data) > 0:
+                        values.append(answer.data[0])
                         break
-                    answer = self.interface.recv(1)
-            retval = (firstanswer * 256 + int(answer.data[0]))
-            while answer is not None:
-                answer = self.interface.recv(1)
-            return retval
+            else:
+                raise HellaProgError(f"No response for address {addr:02X}")
+        
+        # Combine bytes into 16-bit value (big-endian)
+        if len(values) >= 2:
+            return (values[0] << 8) | values[1]
+        return values[0] if values else 0
+    
+    def readmax(self) -> int:
+        """
+        Read the maximum position value from the actuator.
+        
+        Returns:
+            Maximum position value (16-bit)
+            
+        Raises:
+            HellaProgError: If reading fails.
+        """
+        logger.info("Reading maximum position")
+        try:
+            return self._read_position_value([5, 6])
+        except Exception as e:
+            raise HellaProgError(f"Failed to read max position: {e}")
 
-    def readmin(self):
-        self.interface.send(self.msg_req)
-        answer = self.interface.recv(1)
-        if True:
-            for n in [3,4]:
-                firstanswer = int(answer.data[0])
-                while answer is not None and answer.arbitration_id != 0x3EB and answer.data[7] != 0x53:
-                    answer = self.interface.recv(1)
-                msg = can.Message(extended_id=False,arbitration_id=0x3F0,data=bytearray([0x31,0x0C,n,0x00,0x00,0x00,0x00,0x00]))
+    def readmin(self) -> int:
+        """
+        Read the minimum position value from the actuator.
+        
+        Returns:
+            Minimum position value (16-bit)
+            
+        Raises:
+            HellaProgError: If reading fails.
+        """
+        logger.info("Reading minimum position")
+        try:
+            return self._read_position_value([3, 4])
+        except Exception as e:
+            raise HellaProgError(f"Failed to read min position: {e}")
+
+    def readminmax(self) -> Tuple[int, int]:
+        """
+        Read both minimum and maximum position values from the actuator.
+        
+        Returns:
+            Tuple of (min_position, max_position)
+            
+        Raises:
+            HellaProgError: If reading fails.
+        """
+        logger.info("Reading min/max positions")
+        try:
+            self._send_request_and_wait()
+            
+            # Read min (addresses 3,4), max (addresses 5,6), and range (address 0x22)
+            addresses = [3, 4, 5, 6, 0x22]
+            values = []
+            
+            for addr in addresses:
+                msg = can.Message(
+                    is_extended_id=False,
+                    arbitration_id=REQUEST_ID,
+                    data=bytearray([0x31, 0x0C, addr, 0x00, 0x00, 0x00, 0x00, 0x00])
+                )
                 self.interface.send(msg)
-                answer = self.interface.recv(1)
-                while answer is not None:
-                    if answer.arbitration_id == 0x3E8:
-                        break
-                    answer = self.interface.recv(1)
-            retval = (firstanswer * 256 + int(answer.data[0]))
-            while answer is not None:
-                answer = self.interface.recv(1)
-            return retval
+                
+                # Wait for response
+                start_time = time.time()
+                while time.time() - start_time < DEFAULT_TIMEOUT:
+                    answer = self.interface.recv(0.1)
+                    if answer is not None and answer.arbitration_id == MEMORY_RESPONSE_ID:
+                        if len(answer.data) > 0:
+                            values.append(answer.data[0])
+                            break
+                else:
+                    raise HellaProgError(f"No response for address {addr:02X}")
+            
+            if len(values) >= 5:
+                min_pos = (values[0] << 8) | values[1]
+                max_pos = (values[2] << 8) | values[3]
+                # Alternative calculation using range: max_pos = min_pos + (values[4] * 4)
+                return (min_pos, max_pos)
+            else:
+                raise HellaProgError("Insufficient data received")
+                
+        except Exception as e:
+            raise HellaProgError(f"Failed to read min/max positions: {e}")
 
-    def readminmax(self):
-        self.interface.send(self.msg_req)
-        answer = self.interface.recv(1)
-        if True:
-            addr = [3,4,0x22]
-            answers = [0]*len(addr)
-            for n in range(len(addr)):
-                while answer is not None and answer.arbitration_id != 0x3EB and answer.data[7] != 0x53:
-                    answer = self.interface.recv(1)
-                msg = can.Message(extended_id=False,arbitration_id=0x3F0,data=bytearray([0x31,0x0C,addr[n],0x00,0x00,0x00,0x00,0x00]))
-                self.interface.send(msg)
-                answer = self.interface.recv(1)
-                while answer is not None:
-                    if answer.arbitration_id == 0x3E8:
-                        answers[n]=answer.data[0]
-                        break
-                    answer = self.interface.recv(1)
-            while answer is not None:
-                answer = self.interface.recv(1)
-        return [answers[0]*256+answers[1],answers[0]*256+answers[1]+answers[2]*4]
-
-    def recv(self, timeout):
+    def recv(self, timeout: float = DEFAULT_TIMEOUT) -> Optional[can.Message]:
+        """
+        Receive a CAN message with optional logging.
+        
+        Args:
+            timeout: Timeout in seconds
+            
+        Returns:
+            Received CAN message or None if timeout
+        """
         answer = self.interface.recv(timeout)
         if answer is not None:
-            print(answer.arbitration_id)
-            sys.stdout.flush()
+            logger.debug(f"Received message ID: {answer.arbitration_id:03X}")
         return answer
 
     def set_max(self, pos):
@@ -336,19 +503,73 @@ class hella_prog:
                 print('%02X%02X'%(answer.data[5],answer.data[6]))
             answer = self.interface.recv(1)
     
-    def shutdown(self):
-        self.interface.shutdown()
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with cleanup."""
+        self.shutdown()
+    
+    def shutdown(self) -> None:
+        """
+        Properly shutdown the CAN interface.
+        """
+        try:
+            if hasattr(self, 'interface') and self.interface:
+                self.interface.shutdown()
+                logger.info("CAN interface shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}")
+
+
+def main():
+    """
+    Example usage of the HellaProg class.
+    """
+    try:
+        # Use context manager for proper cleanup
+        with HellaProg('can0', 'socketcan') as hp:
+            logger.info("Connected to Hella actuator")
+            
+            # Example operations (uncomment as needed)
+            
+            # Read memory dump
+            filename = hp.readmemory()
+            logger.info(f"Memory dumped to: {filename}")
+            
+            # Read current positions
+            try:
+                min_pos = hp.readmin()
+                max_pos = hp.readmax()
+                logger.info(f"Current min/max: {min_pos:04X}/{max_pos:04X}")
+            except HellaProgError as e:
+                logger.error(f"Failed to read positions: {e}")
+            
+            # Example position setting (uncomment to use)
+            # hp.set_max(0x0220)
+            # hp.set_min(0x0113)
+            
+            # Automatic calibration (uncomment to use)
+            # try:
+            #     min_pos, max_pos = hp.find_end_positions()
+            #     logger.info(f"Calibrated positions: {min_pos:04X}-{max_pos:04X}")
+            # except HellaProgError as e:
+            #     logger.error(f"Calibration failed: {e}")
+            
+    except HellaProgError as e:
+        logger.error(f"Hella programming error: {e}")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        logger.info("Operation interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
-    hp = hella_prog('vcan0', 'socketcan')
-
-    #set_max(0x0220)
-    #set_max(0x033D)
-    #set_min(0x0113)
-    #set_min(0x01FF)
-    hp.readmemory()
-    
-    #hp.find_end_positions()
+    main()
 
 
 # vim: et:sw=4:ts=4:smarttab:foldmethod=indent:si
