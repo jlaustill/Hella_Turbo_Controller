@@ -35,7 +35,43 @@ The main class `HellaProg` in `hella_prog.py` handles all communication with the
 - 0x3EA: Position status responses  
 - 0x3EB: Acknowledgment responses
 
-## Usage Examples
+## Interactive Menu System (Recommended)
+
+The easiest way to use this tool is through the interactive menu system:
+
+```bash
+# Easy launcher with dependency checking
+./run_menu.sh
+
+# Or run directly
+python3 hella_menu.py
+```
+
+### Menu Features
+
+- **🔌 Smart Interface Detection**: Automatically detects available CAN interfaces
+- **✅ Connection Validation**: Tests hardware connectivity before proceeding
+- **📁 Memory Operations**: Read and visualize memory dumps with hex analysis
+- **⚙️ Position Management**: Set min/max positions with input validation
+- **🎯 Auto-Calibration**: Automatic end position discovery with safety warnings
+- **📊 Data Visualization**: View memory dumps in hex format with data analysis
+- **🔄 Real-time Monitoring**: Read current actuator position
+- **🛡️ Error Handling**: Comprehensive error handling with retry options
+
+### Interface Configuration
+
+The menu system supports:
+
+| Interface Type | Description | Example |
+|---------------|-------------|---------|
+| **SocketCAN** | Linux built-in CAN | can0, can1 |
+| **SLCAN** | USB-to-CAN adapters | /dev/ttyUSB0, /dev/ttyACM0 |
+| **Virtual CAN** | Testing with virtual interfaces | vcan0 |
+| **Custom** | Manual configuration | Any valid channel |
+
+## Programmatic Usage
+
+For scripting and automation, use the library directly:
 
 ```python
 from hella_prog import HellaProg
@@ -59,15 +95,22 @@ with HellaProg('can0', 'socketcan') as hp:
 
 ## Testing
 
-Run the main script directly:
-```bash
-python3 hella_prog.py
-```
+Multiple ways to test the system:
 
-The script includes example usage and proper error handling. Modify the `main()` function to customize behavior.
+```bash
+# Interactive menu (recommended for users)
+./run_menu.sh
+
+# Direct script execution (for testing/automation)
+python3 hella_prog.py
+
+# Library import test
+python3 -c "from hella_prog import HellaProg; print('Import successful')"
+```
 
 ## Improvements Made
 
+### Core Library (hella_prog.py)
 - Fixed critical runtime errors (typos, logic bugs)
 - Added comprehensive error handling and timeouts
 - Implemented proper input validation
@@ -76,3 +119,14 @@ The script includes example usage and proper error handling. Modify the `main()`
 - Reduced code duplication through common message sequences
 - Added type hints for better code clarity
 - Implemented proper logging instead of print statements
+
+### Interactive Menu System (hella_menu.py)
+- **User-Friendly Interface**: Beautiful terminal menus with arrow key navigation
+- **Smart Hardware Detection**: Automatically finds available CAN interfaces and USB devices
+- **Connection Validation**: Tests hardware before proceeding with operations
+- **Input Validation**: Prevents invalid position values and configuration errors
+- **Memory Dump Visualization**: Hex dump viewer with data analysis and statistics
+- **Safety Features**: Confirmation prompts for destructive operations
+- **Progress Indicators**: Visual feedback for long-running operations
+- **Error Recovery**: Retry mechanisms and helpful error messages
+- **Cross-Platform**: Works on Linux with SocketCAN and Windows/Mac with USB adapters
