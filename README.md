@@ -12,13 +12,33 @@ This repository provides both:
 
 ## ⚡ Quick Start
 
-### 1. Install Dependencies
+### Option 1: Automatic Setup (Recommended)
 ```bash
-pip install -r requirements.txt
+# The launcher handles dependencies automatically
+./run_menu.sh
 ```
 
-### 2. Run the Interactive Menu
+### Option 2: Manual Setup
+
+**For newer Ubuntu/Debian systems (recommended):**
 ```bash
+# Create a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the menu
+python3 hella_menu.py
+```
+
+**For older systems or if you prefer system-wide install:**
+```bash
+# Install dependencies system-wide
+pip install -r requirements.txt
+
+# Run the menu
 ./run_menu.sh
 ```
 
@@ -131,6 +151,21 @@ with HellaProg('can0', 'socketcan') as hp:
 ## 🛠️ Troubleshooting
 
 ### Common Issues
+
+**"externally-managed-environment" error**
+```bash
+# Modern Ubuntu/Debian systems protect the system Python
+# Solution 1: Use virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Solution 2: Use the automatic launcher
+./run_menu.sh  # Handles this automatically
+
+# Solution 3: Install missing system packages
+sudo apt install python3-venv python3-pip
+```
 
 **"No CAN interfaces detected"**
 - Check if CAN hardware is connected
