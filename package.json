@@ -28,7 +28,7 @@
     "build": "vite build",
     "serve": "serve dist -p 8080",
     "electron:dev": "concurrently \"npm run dev\" \"npm run electron:build-main && wait-on http://localhost:3000 && electron . --no-sandbox\"",
-    "electron:build-main": "tsc electron/main.ts --outDir dist-electron --target es2020 --module commonjs --moduleResolution node --esModuleInterop && mv dist-electron/main.js dist-electron/main.cjs",
+    "electron:build-main": "tsc electron/*.ts --outDir dist-electron --target es2020 --module commonjs --moduleResolution node --esModuleInterop && mv dist-electron/main.js dist-electron/main.cjs",
     "electron:build": "npm run build && electron-builder",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
     "lint:fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",

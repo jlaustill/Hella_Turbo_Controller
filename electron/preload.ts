@@ -4,7 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
   can: {
-    connect: (interface: any) => ipcRenderer.invoke('can-connect', interface),
+    connect: (canInterface: any) => ipcRenderer.invoke('can-connect', canInterface),
     disconnect: () => ipcRenderer.invoke('can-disconnect'),
     sendMessage: (id: number, data: Buffer) => ipcRenderer.invoke('can-send-message', id, data),
   },
