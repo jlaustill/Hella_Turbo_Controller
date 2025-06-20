@@ -836,10 +836,80 @@ class HellaMenuSystem:
                 req_can_id = (req_id_h << 8) | req_id_l
                 resp_can_id = (resp_id_h << 8) | resp_id_l
                 
-                analysis_table.add_row("Request CAN ID", f"0x{req_can_id:03X}", f"From bytes 0x{req_id_h:02X}{req_id_l:02X}")
-                analysis_table.add_row("Response CAN ID", f"0x{resp_can_id:03X}", f"From bytes 0x{resp_id_h:02X}{resp_id_l:02X}")
+                analysis_table.add_row("Request CAN ID (0x24-25)", f"0x{req_can_id:03X}", f"From bytes 0x{req_id_h:02X}{req_id_l:02X}")
+                analysis_table.add_row("Response CAN ID (0x27-28)", f"0x{resp_can_id:03X}", f"From bytes 0x{resp_id_h:02X}{resp_id_l:02X}")
+                
+                # Position update CAN ID - often derived from response ID
+                # Based on observed behavior, position updates may use different calculation
+                pos_update_id = resp_can_id - 0x200  # Common offset pattern
+                analysis_table.add_row("🎯 Position Update ID", f"0x{pos_update_id:03X}", f"Calculated: 0x{resp_can_id:03X} - 0x200")
+                analysis_table.add_row("", f"0x{resp_can_id:03X}", f"Alternative: Direct response ID")
+            
+            # Additional CAN ID at 0x26 (often used for position updates)
+            if len(data) > 0x26:
+                pos_id_byte = data[0x26]
+                analysis_table.add_row("Position ID Byte (0x26)", f"0x{pos_id_byte:02X}", f"May affect position update CAN ID")
         
         console.print(analysis_table)
+        
+        # Add critical data format warning
+        console.print("\n[bold red]⚠️  CRITICAL: CAN Data Format Corrections[/bold red]")
+        format_table = Table()
+        format_table.add_column("Data Type", style="cyan")
+        format_table.add_column("Verified G-222 Format", style="green") 
+        format_table.add_column("OLD (Dangerous) Assumption", style="red")
+        
+        format_table.add_row("Position", "Bytes 2-3 (big endian)", "Bytes 5-6 (WRONG!)")
+        format_table.add_row("Position Range", "688 (0%) to 212 (100%)", "Unknown/incorrect")
+        format_table.add_row("Status", "Byte 0", "Not documented")
+        format_table.add_row("Temperature", "Byte 5", "Partially correct")
+        format_table.add_row("Motor Load", "Bytes 6-7 (big endian)", "Not documented")
+        format_table.add_row("CAN ID", "0x658 (this actuator)", "0x3EA (hardcoded)")
+        
+        console.print(format_table)
+        console.print("[yellow]⚠️  Using incorrect data format could BRICK your actuator![/yellow]")
+        console.print("[dim]Always verify format with candump before any modifications[/dim]")
+        
+        # Add CAN message format configuration analysis
+        console.print("\n[bold]🔍 Potential CAN Message Format Configuration:[/bold]")
+        config_table = Table()
+        config_table.add_column("Address", style="cyan")
+        config_table.add_column("Data Block", style="yellow")
+        config_table.add_column("Potential Meaning", style="green")
+        
+        # Analyze specific blocks that might contain message format config
+        if len(data) > 0x2F:
+            block_28 = ' '.join(f'{data[0x28+i]:02X}' for i in range(8))
+            config_table.add_row("0x28-2F", block_28, "CAN ID + byte position config?")
+            
+            # Look for byte position patterns in this block
+            if data[0x2C] == 6 and data[0x2D] == 2:
+                config_table.add_row("0x2C-2D", f"{data[0x2C]:02X} {data[0x2D]:02X}", "Motor load at byte 6, position at byte 2?")
+        
+        if len(data) > 0x6F:
+            block_68 = ' '.join(f'{data[0x68+i]:02X}' for i in range(8))
+            if block_68 == block_28:  # If identical to 0x28 block
+                config_table.add_row("0x68-6F", block_68, "Duplicate of 0x28 block (backup?)")
+            else:
+                config_table.add_row("0x68-6F", block_68, "Alternative message format?")
+        
+        # Look for other potential byte position indicators
+        byte_pos_patterns = []
+        for i in range(len(data)-3):
+            if (data[i] in [0, 1, 2, 3, 4, 5, 6, 7] and 
+                data[i+1] in [0, 1, 2, 3, 4, 5, 6, 7] and
+                data[i+2] in [0, 1, 2, 3, 4, 5, 6, 7] and
+                data[i+3] in [0, 1, 2, 3, 4, 5, 6, 7]):
+                pattern = f"{data[i]:02X} {data[i+1]:02X} {data[i+2]:02X} {data[i+3]:02X}"
+                byte_pos_patterns.append((i, pattern))
+        
+        if byte_pos_patterns:
+            config_table.add_row("", "", "")
+            config_table.add_row("[bold]Byte Position Patterns", "", "")
+            for addr, pattern in byte_pos_patterns[:5]:  # Show first 5
+                config_table.add_row(f"0x{addr:02X}", pattern, "Possible byte position map")
+        
+        console.print(config_table)
         
         # Add actuator type detection
         console.print("\n[bold]🔍 Actuator Analysis:[/bold]")
@@ -931,7 +1001,7 @@ class HellaMenuSystem:
         ) as progress:
             task = progress.add_task("Reading position...", total=None)
             
-            position = self.hp.read_current_position()
+            position = self.hp.readCurrentPosition()
             
             progress.update(task, description="Position read!")
             time.sleep(0.5)
@@ -1007,7 +1077,7 @@ class HellaMenuSystem:
                     task = progress.add_task("Testing communication...", total=None)
                     
                     # Try to read current position as a simple test
-                    position = self.hp.read_current_position()
+                    position = self.hp.readCurrentPosition()
                     
                     progress.update(task, description="Communication test completed!")
                     time.sleep(0.5)

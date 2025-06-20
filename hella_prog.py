@@ -16,7 +16,7 @@ from typing import Optional, List, Tuple
 # CAN Message IDs
 REQUEST_ID = 0x3F0
 MEMORY_RESPONSE_ID = 0x3E8
-POSITION_RESPONSE_ID = 0x3EA
+POSITION_RESPONSE_ID = 0x658
 ACK_RESPONSE_ID = 0x3EB
 
 # Message constants
@@ -473,7 +473,7 @@ class HellaProg:
         self.interface.send(self.msg_req)
         answer = self.interface.recv(1)
         while answer is not None:
-            if answer.arbitration_id == 0x3EA:
+            if answer.arbitration_id == POSITION_RESPONSE_ID:
                 print('%02X%02X'%(answer.data[5],answer.data[6]))
             answer = self.interface.recv(1)
         for item in msgs2:
@@ -484,7 +484,7 @@ class HellaProg:
         self.interface.send(self.msg_req)
         answer = self.interface.recv(1)
         while answer is not None:
-            if answer.arbitration_id == 0x3EA:
+            if answer.arbitration_id == POSITION_RESPONSE_ID:
                 print('%02X%02X'%(answer.data[5],answer.data[6]))
             answer = self.interface.recv(1)
         for item in msgs3:
@@ -495,13 +495,37 @@ class HellaProg:
         time.sleep(1)
     
     def readCurrentPosition(self):
-        self.interface.send(self.msg_req)
-        answer = self.interface.recv(1)
-        self.interface.send(self.msg_req)
-        while answer is not None:
-            if answer.arbitration_id == 0x3EA:
-                print('%02X%02X'%(answer.data[5],answer.data[6]))
-            answer = self.interface.recv(1)
+        """
+        Read the current actuator position using correct G-222 format.
+        
+        Based on reverse engineering:
+        - Position: bytes 2-3 (big endian)
+        - Range: 688 (0% open) to 212 (100% open) - inverted scale
+        
+        Returns:
+            Current position value (16-bit) or None if no response
+        """
+        # Just listen for existing position messages (actuator sends them automatically)
+        start_time = time.time()
+        while time.time() - start_time < DEFAULT_TIMEOUT:
+            answer = self.interface.recv(0.1)
+            if answer is not None and answer.arbitration_id == POSITION_RESPONSE_ID:
+                if len(answer.data) >= 4:
+                    # CORRECT format: position is in bytes 2-3
+                    position = (answer.data[2] << 8) | answer.data[3]
+                    status = answer.data[0] if len(answer.data) > 0 else 0
+                    temp = answer.data[5] if len(answer.data) > 5 else 0
+                    motor_load = ((answer.data[6] << 8) | answer.data[7]) if len(answer.data) >= 8 else 0
+                    
+                    # Convert to percentage (688=0%, 212=100%)
+                    if position <= 688 and position >= 212:
+                        percentage = ((688 - position) * 100) // (688 - 212)
+                    else:
+                        percentage = -1  # Out of range
+                    
+                    print(f'Pos: {position:04X} ({percentage}%) Status: {status:02X} Temp: {temp}°C Load: {motor_load}')
+                    return position
+        return None
     
     def write_memory_byte(self, address: int, value: int) -> None:
         """

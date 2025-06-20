@@ -24,7 +24,7 @@ The main class `HellaProg` in `hella_prog.py` handles all communication with the
 - **Memory Operations**: Read actuator memory (`readmemory()`) - outputs timestamped binary files
 - **Position Management**: Read/write min/max positions (`readmin()`, `readmax()`, `set_min()`, `set_max()`)
 - **Calibration**: Auto-discover end positions (`find_end_positions()`)
-- **Real-time Monitoring**: Read current actuator position (`read_current_position()`)
+- **Real-time Monitoring**: Read current actuator position (`readCurrentPosition()`)
 - **Error Handling**: Comprehensive exception handling with custom `HellaProgError`
 - **Context Manager**: Supports `with` statement for automatic cleanup
 
@@ -107,6 +107,39 @@ python3 hella_prog.py
 # Library import test
 python3 -c "from hella_prog import HellaProg; print('Import successful')"
 ```
+
+## Development Guidelines
+
+### Code Modification Best Practices
+
+**ALWAYS check for existing methods before creating new ones:**
+- Use `grep` or code search to find existing functionality
+- Check method names with similar patterns (e.g., `readCurrentPosition` vs `read_current_position`)
+- Prefer modifying existing methods to return appropriate values rather than duplicating functionality
+- When a method exists but doesn't return the expected value, modify it instead of creating a wrapper
+
+**Example:** If you need a method that returns a position value but find an existing method that only prints it, modify the existing method to both print AND return the value rather than creating a duplicate method.
+
+### ⚠️ CRITICAL SAFETY WARNING - Data Format Corrections
+
+**DANGER: Previous assumptions about CAN data format were WRONG and could brick actuators!**
+
+**Original (INCORRECT) assumptions:**
+- Position data in bytes 5-6 of CAN messages
+- Various hardcoded CAN IDs that may not match actual hardware
+
+**Verified G-222 format (from reverse engineering):**
+- **Position**: bytes 2-3 (big endian) - range 688 (0% open) to 212 (100% open)  
+- **Status**: byte 0
+- **Temperature**: byte 5  
+- **Motor Load**: bytes 6-7 (big endian)
+- **CAN ID**: 0x658 (for this specific actuator - varies by model)
+
+**Before making ANY memory modifications:**
+1. Verify the exact data format for YOUR specific actuator model
+2. Use candump to observe actual CAN traffic patterns  
+3. Cross-reference memory contents with observed behavior
+4. NEVER assume byte positions without verification
 
 ## Improvements Made
 
