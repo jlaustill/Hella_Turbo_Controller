@@ -80,10 +80,14 @@ The menu automatically detects available interfaces:
 - Results displayed in detailed table
 
 #### 📊 View Memory Dump
-- Hex dump viewer with ASCII representation
-- Data analysis and statistics
-- Interprets position values from memory
-- File size and content analysis
+- **Intelligent analysis** of all 128 memory bytes
+- **Position extraction** from addresses 0x03-0x06
+- **CAN ID detection** and configuration analysis  
+- **Actuator type identification** (G-221, G-22, G-222 variants)
+- **Control mode detection** (CAN vs PWM)
+- **Safety warnings** for dangerous memory locations
+- **Hex dump viewer** with ASCII representation
+- **Complete documentation** in [MEMORY_LAYOUT.md](MEMORY_LAYOUT.md)
 
 ### Navigation
 - **Arrow keys**: Navigate menu options
@@ -146,6 +150,7 @@ with HellaProg('can0', 'socketcan') as hp:
 ## 📖 Documentation
 
 - **[MENU_GUIDE.md](MENU_GUIDE.md)**: Comprehensive user guide for the interactive menu
+- **[MEMORY_LAYOUT.md](MEMORY_LAYOUT.md)**: Complete memory dump analysis and configuration guide
 - **[CLAUDE.md](CLAUDE.md)**: Technical documentation and API reference
 
 ## 🛠️ Troubleshooting
