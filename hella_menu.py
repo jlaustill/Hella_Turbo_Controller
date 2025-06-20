@@ -280,6 +280,7 @@ class HellaMenuSystem:
             "⚙️  Set maximum position",
             "🎯 Auto-calibrate end positions",
             "📊 View memory dump (visualization)",
+            "✏️  Write single memory byte",
             "🔄 Read current actuator position",
             "🔧 Connection information",
             "❌ Disconnect and exit"
@@ -312,6 +313,8 @@ class HellaMenuSystem:
                 self._handle_auto_calibrate()
             elif action.startswith("📊"):
                 self._handle_view_dump()
+            elif action.startswith("✏️"):
+                self._handle_write_memory_byte()
             elif action.startswith("🔄"):
                 self._handle_current_position()
             elif action.startswith("🔧"):
@@ -584,6 +587,118 @@ class HellaMenuSystem:
         
         console.print(table)
         console.print("[green]✅ Automatic calibration completed successfully![/green]")
+    
+    def _handle_write_memory_byte(self):
+        """Handle writing a single byte to memory."""
+        console.print("[bold]✏️  Write Memory Byte[/bold]")
+        
+        # Safety warning
+        warning_text = Text()
+        warning_text.append("⚠️  DANGER: ", style="bold red")
+        warning_text.append("Writing to wrong memory addresses can permanently brick your actuator!\n", style="red")
+        warning_text.append("Always backup your memory dump before making any changes.\n", style="yellow")
+        warning_text.append("Only modify addresses you understand completely.", style="yellow")
+        
+        console.print(Panel(warning_text, title="Safety Warning", border_style="red"))
+        
+        # Check if backup exists
+        backup_files = []
+        import glob
+        for pattern in ['*.bin', '*dump*.bin', 'backup_*.bin']:
+            backup_files.extend(glob.glob(pattern))
+        
+        if not backup_files:
+            console.print("[red]❌ No backup files found![/red]")
+            if not Confirm.ask("Do you want to create a backup now? (HIGHLY RECOMMENDED)"):
+                console.print("[yellow]⚠️  Operation cancelled for safety[/yellow]")
+                return
+            else:
+                self._handle_memory_dump()
+                return
+        
+        # Get address and value
+        try:
+            address_input = inquirer.prompt([
+                inquirer.Text(
+                    'address',
+                    message="Enter memory address (hex format like 0x41 or decimal like 65)",
+                    validate=lambda _, x: self._validate_address(x)
+                )
+            ])['address']
+            
+            value_input = inquirer.prompt([
+                inquirer.Text(
+                    'value', 
+                    message="Enter byte value (hex format like 0x50 or decimal like 80)",
+                    validate=lambda _, x: self._validate_byte_value(x)
+                )
+            ])['value']
+            
+            # Parse inputs
+            address = int(address_input, 16) if address_input.startswith('0x') else int(address_input)
+            value = int(value_input, 16) if value_input.startswith('0x') else int(value_input)
+            
+            # Show what will be written
+            console.print(f"\n[bold]Write Operation Summary:[/bold]")
+            console.print(f"Address: 0x{address:02X} ({address})")
+            console.print(f"Value: 0x{value:02X} ({value})")
+            
+            # Check if dangerous
+            dangerous_addresses = {0x09, 0x0A, 0x24, 0x25, 0x27, 0x28, 0x29, 0x41, 0x10}
+            if address in dangerous_addresses:
+                console.print(f"[red]⚠️  WARNING: Address 0x{address:02X} is DANGEROUS to modify![/red]")
+                console.print("[red]This could permanently brick your actuator![/red]")
+                if not Confirm.ask("Are you absolutely sure you want to proceed?"):
+                    console.print("[yellow]⚠️  Operation cancelled[/yellow]")
+                    return
+            
+            # Final confirmation
+            if not Confirm.ask(f"Write 0x{value:02X} to address 0x{address:02X}?"):
+                console.print("[yellow]⚠️  Operation cancelled[/yellow]")
+                return
+            
+            # Perform write
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task("Writing memory byte...", total=None)
+                
+                self.hp.write_memory_byte(address, value)
+                
+                progress.update(task, description="Write completed!")
+                time.sleep(0.5)
+            
+            console.print(f"[green]✅ Successfully wrote 0x{value:02X} to address 0x{address:02X}[/green]")
+            console.print("[yellow]💡 Consider reading memory again to verify the change[/yellow]")
+            
+        except ValueError as e:
+            console.print(f"[red]❌ Invalid input: {e}[/red]")
+        except Exception as e:
+            console.print(f"[red]❌ Write failed: {e}[/red]")
+    
+    def _validate_address(self, address_str: str) -> bool:
+        """Validate memory address input."""
+        try:
+            if address_str.startswith('0x'):
+                addr = int(address_str, 16)
+            else:
+                addr = int(address_str)
+            return 0 <= addr <= 0x7F
+        except ValueError:
+            return False
+    
+    def _validate_byte_value(self, value_str: str) -> bool:
+        """Validate byte value input."""
+        try:
+            if value_str.startswith('0x'):
+                val = int(value_str, 16)
+            else:
+                val = int(value_str)
+            return 0 <= val <= 0xFF
+        except ValueError:
+            return False
     
     def _handle_view_dump(self):
         """Handle viewing memory dump with visualization."""

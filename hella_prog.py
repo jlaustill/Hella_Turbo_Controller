@@ -503,6 +503,96 @@ class HellaProg:
                 print('%02X%02X'%(answer.data[5],answer.data[6]))
             answer = self.interface.recv(1)
     
+    def write_memory_byte(self, address: int, value: int) -> None:
+        """
+        Write a single byte to actuator memory.
+        
+        ⚠️ DANGER: Writing to wrong addresses can permanently brick your actuator!
+        Always backup memory before making changes.
+        
+        Args:
+            address: Memory address (0x00 to 0x7F)
+            value: Byte value to write (0x00 to 0xFF)
+            
+        Raises:
+            HellaProgError: If writing fails or parameters are invalid
+        """
+        # Validate inputs
+        if not (0 <= address <= 0x7F):
+            raise HellaProgError(f"Invalid address 0x{address:02X}. Must be 0x00-0x7F")
+        if not (0 <= value <= 0xFF):
+            raise HellaProgError(f"Invalid value 0x{value:02X}. Must be 0x00-0xFF")
+        
+        # Define dangerous addresses that should never be modified
+        DANGEROUS_ADDRESSES = {
+            0x09, 0x0A,  # Command CAN ID
+            0x24, 0x25,  # Request CAN ID  
+            0x27, 0x28,  # Response CAN ID
+            0x29,        # Control Mode Config
+            0x41,        # Interface Config
+            0x10,        # Unknown critical function
+        }
+        
+        if address in DANGEROUS_ADDRESSES:
+            logger.warning(f"⚠️  Address 0x{address:02X} is dangerous to modify!")
+            logger.warning("This could permanently brick your actuator.")
+        
+        logger.info(f"Writing 0x{value:02X} to address 0x{address:02X}")
+        
+        try:
+            # Send initial request
+            self._send_request_and_wait()
+            
+            # Memory write sequence based on set_max() pattern
+            msg = can.Message(
+                extended_id=False,
+                arbitration_id=REQUEST_ID,
+                data=bytearray([0x31, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+            )
+            
+            # Write sequence: setup, target address, write value, commit
+            msgs = [
+                # Setup sequence
+                bytearray([0x31, 0x00, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x31, 0x01, 0x5D, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x57, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x31, 0x00, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x31, 0x00, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x57, 0x00, 0x00, 0x2D, 0x00, 0x00, 0x00, 0x00]),
+                
+                # Set target address  
+                bytearray([0x31, 0x0C, address, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                
+                # Write value
+                bytearray([0x57, 0x00, 0x00, value, 0x00, 0x00, 0x00, 0x00]),
+                
+                # Commit sequence
+                bytearray([0x31, 0x00, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x57, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x31, 0x00, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x57, 0x00, 0x00, 0x8D, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x31, 0x01, 0x5D, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x57, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x31, 0x00, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                bytearray([0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+            ]
+            
+            # Send all messages with delays
+            for item in msgs:
+                msg.data = item
+                self.interface.send(msg)
+                time.sleep(MESSAGE_DELAY)
+            
+            # Wait for acknowledgment and clear buffer
+            answer = self.interface.recv(DEFAULT_TIMEOUT)
+            while answer is not None:
+                answer = self.interface.recv(0.1)
+                
+            logger.info(f"Successfully wrote 0x{value:02X} to address 0x{address:02X}")
+            
+        except Exception as e:
+            raise HellaProgError(f"Failed to write memory at 0x{address:02X}: {e}")
+    
     def __enter__(self):
         """Context manager entry."""
         return self

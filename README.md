@@ -89,6 +89,14 @@ The menu automatically detects available interfaces:
 - **Hex dump viewer** with ASCII representation
 - **Complete documentation** in [MEMORY_LAYOUT.md](MEMORY_LAYOUT.md)
 
+#### ✏️ Write Memory Byte
+- ⚠️ **ADVANCED USERS ONLY**: Modify individual memory bytes
+- **Safety validation**: Automatic backup requirement
+- **Dangerous address warnings** for critical configuration bytes
+- **Input validation**: Supports both hex (`0x41`) and decimal (`65`) formats
+- **Multiple confirmations** to prevent accidental changes
+- **Protocol compliance**: Uses proper actuator write sequence
+
 ### Navigation
 - **Arrow keys**: Navigate menu options
 - **Enter**: Select option
@@ -142,6 +150,9 @@ with HellaProg('can0', 'socketcan') as hp:
     # Set new positions (with validation)
     hp.set_min(0x0113)
     hp.set_max(0x0220)
+    
+    # Write single memory byte (ADVANCED - be very careful!)
+    # hp.write_memory_byte(0x41, 0x50)  # Enable CAN control
     
     # Auto-calibrate (be careful!)
     # min_pos, max_pos = hp.find_end_positions()
