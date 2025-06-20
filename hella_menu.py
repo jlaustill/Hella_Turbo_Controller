@@ -669,27 +669,117 @@ class HellaMenuSystem:
         analysis_table = Table()
         analysis_table.add_column("Property", style="cyan")
         analysis_table.add_column("Value", style="yellow")
+        analysis_table.add_column("Notes", style="dim")
         
-        analysis_table.add_row("File Size", f"{len(data)} bytes")
-        analysis_table.add_row("Non-zero Bytes", str(sum(1 for b in data if b != 0)))
-        analysis_table.add_row("Zero Bytes", str(sum(1 for b in data if b == 0)))
+        analysis_table.add_row("File Size", f"{len(data)} bytes", "Expected: 128 bytes")
+        analysis_table.add_row("Non-zero Bytes", str(sum(1 for b in data if b != 0)), "")
+        analysis_table.add_row("Zero Bytes", str(sum(1 for b in data if b == 0)), "")
         
-        if len(data) >= 8:
-            # Try to interpret some key positions
-            # Positions 3-4: Min position (big-endian)
-            # Positions 5-6: Max position (big-endian)
+        # Interpret known memory locations
+        if len(data) >= 128:
+            analysis_table.add_row("", "", "")
+            analysis_table.add_row("[bold]Known Memory Locations[/bold]", "", "")
+            
+            # Position values (addresses 3-6)
             if len(data) > 6:
-                min_pos = (data[3] << 8) | data[4] if len(data) > 4 else 0
-                max_pos = (data[5] << 8) | data[6] if len(data) > 6 else 0
+                min_pos = (data[3] << 8) | data[4]
+                max_pos = (data[5] << 8) | data[6]
                 
-                analysis_table.add_row("", "")
-                analysis_table.add_row("Interpreted Min Pos", f"{min_pos:04X} ({min_pos})")
-                analysis_table.add_row("Interpreted Max Pos", f"{max_pos:04X} ({max_pos})")
+                analysis_table.add_row("Min Position (0x03-04)", f"{min_pos:04X} ({min_pos})", "Actuator minimum")
+                analysis_table.add_row("Max Position (0x05-06)", f"{max_pos:04X} ({max_pos})", "Actuator maximum")
                 
                 if max_pos > min_pos:
-                    analysis_table.add_row("Interpreted Range", f"{max_pos - min_pos:04X} ({max_pos - min_pos})")
+                    range_val = max_pos - min_pos
+                    analysis_table.add_row("Position Range", f"{range_val:04X} ({range_val})", f"≈{range_val/10.24:.1f}% of full scale")
+            
+            # Range calculation byte (address 0x22)
+            if len(data) > 0x22:
+                range_byte = data[0x22]
+                expected_range = (max_pos - min_pos) // 4 if max_pos > min_pos else 0
+                match_indicator = "✓" if abs(range_byte - expected_range) <= 1 else "⚠️"
+                analysis_table.add_row("Range Byte (0x22)", f"{range_byte:02X} ({range_byte})", f"{match_indicator} Expected: {expected_range}")
+            
+            # Configuration bytes (if we can safely interpret them)
+            if len(data) > 0x29:
+                config_29 = data[0x29]
+                analysis_table.add_row("Config Byte (0x29)", f"{config_29:02X}", "Programming CAN ID selector")
+            
+            if len(data) > 0x41:
+                config_41 = data[0x41]
+                pwm_from_can = "Yes" if config_41 & 0x10 else "No"
+                can_tx_enabled = "Yes" if config_41 & 0x40 else "No"
+                motor_dir = "CCW" if config_41 & 0x01 else "CW"
+                analysis_table.add_row("Interface Config (0x41)", f"{config_41:02X}", f"PWM from CAN: {pwm_from_can}")
+                analysis_table.add_row("", "", f"CAN TX: {can_tx_enabled}, Motor: {motor_dir}")
+            
+            # CAN ID configurations (addresses 0x24-0x28)
+            if len(data) > 0x28:
+                req_id_h, req_id_l = data[0x24], data[0x25]
+                resp_id_h, resp_id_l = data[0x27], data[0x28]
+                
+                # Calculate CAN IDs using formula from community research
+                req_can_id = (req_id_h << 8) | req_id_l
+                resp_can_id = (resp_id_h << 8) | resp_id_l
+                
+                analysis_table.add_row("Request CAN ID", f"0x{req_can_id:03X}", f"From bytes 0x{req_id_h:02X}{req_id_l:02X}")
+                analysis_table.add_row("Response CAN ID", f"0x{resp_can_id:03X}", f"From bytes 0x{resp_id_h:02X}{resp_id_l:02X}")
         
         console.print(analysis_table)
+        
+        # Add actuator type detection
+        console.print("\n[bold]🔍 Actuator Analysis:[/bold]")
+        
+        type_table = Table()
+        type_table.add_column("Analysis", style="cyan")
+        type_table.add_column("Result", style="yellow")
+        
+        if len(data) >= 128:
+            # Try to identify actuator type based on known patterns
+            if len(data) > 0x41:
+                config_41 = data[0x41]
+                if config_41 & 0x10 and config_41 & 0x40:
+                    type_table.add_row("Control Mode", "[green]CAN position control enabled[/green]")
+                elif config_41 & 0x40:
+                    type_table.add_row("Control Mode", "[yellow]CAN status only (PWM control)[/yellow]")
+                else:
+                    type_table.add_row("Control Mode", "[red]PWM only (no CAN)[/red]")
+            
+            # Estimate G-code based on response CAN ID
+            if len(data) > 0x28:
+                resp_id = (data[0x27] << 8) | data[0x28]
+                g_code_guess = ""
+                if resp_id == 0x4EB:
+                    g_code_guess = "Possibly G-221 (Ford TDCI style)"
+                elif resp_id == 0x71C:
+                    g_code_guess = "Possibly G-22 variant"
+                elif resp_id == 0x658:
+                    g_code_guess = "Possibly G-222 variant"
+                
+                if g_code_guess:
+                    type_table.add_row("Detected Type", g_code_guess)
+            
+            # Position range analysis
+            if len(data) > 6:
+                min_pos = (data[3] << 8) | data[4]
+                max_pos = (data[5] << 8) | data[6]
+                if max_pos > min_pos:
+                    range_val = max_pos - min_pos
+                    if range_val < 100:
+                        type_table.add_row("Range Assessment", "[yellow]Small range - may need calibration[/yellow]")
+                    elif range_val > 1000:
+                        type_table.add_row("Range Assessment", "[yellow]Large range - check if correct[/yellow]")
+                    else:
+                        type_table.add_row("Range Assessment", "[green]Normal operating range[/green]")
+        
+        console.print(type_table)
+        
+        # Warning about dangerous modifications
+        warning_text = Text()
+        warning_text.append("⚠️  DANGER: ", style="bold red")
+        warning_text.append("Modifying bytes 0x29, 0x41, or CAN ID configs can brick the actuator!\n", style="red")
+        warning_text.append("Always backup before changes. See MEMORY_LAYOUT.md for details.", style="yellow")
+        
+        console.print(Panel(warning_text, title="Safety Warning", border_style="red"))
         
         # Byte distribution visualization
         console.print("\n[bold]📊 Byte Value Distribution:[/bold]")
