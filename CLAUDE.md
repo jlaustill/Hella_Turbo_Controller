@@ -147,6 +147,36 @@ python3 -c "from hella_prog import HellaProg; print('Import successful')"
 3. Cross-reference memory contents with observed behavior
 4. NEVER assume byte positions without verification
 
+### ✍️ CRITICAL: Git Commit Signing Policy
+
+**ALL commits to this repository MUST be GPG signed with ZERO exceptions.**
+
+This is a security-critical project dealing with hardware that can be permanently damaged. Commit signing ensures:
+- **Authenticity**: Verify commits come from trusted contributors
+- **Integrity**: Detect any tampering with commit history
+- **Accountability**: Clear trail of who made what changes
+- **Safety**: Critical for projects that can brick expensive hardware
+
+**Setup GPG signing:**
+```bash
+# Generate GPG key if you don't have one
+gpg --full-generate-key
+
+# Configure Git to use your key
+git config --global user.signingkey YOUR_KEY_ID
+git config --global commit.gpgsign true
+
+# Verify signing works
+git commit -S -m "Test signed commit"
+```
+
+**If commits fail with signing errors:**
+- ❌ **NEVER use `--no-gpg-sign`** 
+- ✅ **Fix the GPG setup instead**
+- ✅ **Ask for help if needed**
+
+This policy protects the community from potentially dangerous unsigned commits.
+
 ## Improvements Made
 
 ### Core Library (hella_prog.py)
