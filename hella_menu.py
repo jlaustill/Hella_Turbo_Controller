@@ -36,6 +36,7 @@ except ImportError:
     sys.exit(1)
 
 from hella_prog import HellaProg, HellaProgError
+from actuator_config import ActuatorConfig
 
 console = Console()
 
@@ -46,6 +47,36 @@ class HellaMenuSystem:
     def __init__(self):
         self.hp: Optional[HellaProg] = None
         self.interface_config = None
+        self.actuator_config = ActuatorConfig()
+        self.current_actuator_id = None
+        self._initialize_default_actuators()
+    
+    def _initialize_default_actuators(self):
+        """Initialize default actuator configurations if they don't exist."""
+        # Add G-222 configuration if it doesn't exist
+        g222_config_id = "6NW-008-412_G-222"
+        if g222_config_id not in self.actuator_config.configs:
+            self.actuator_config.add_actuator(
+                electronic_part_number="6NW-008-412",
+                gearbox_number="G-222",
+                description="Primary test actuator - verified working",
+                observed_can_id="0x658"
+            )
+            
+            # If the original dump file exists, move it to the organized structure
+            original_dump = "actuator_dump_1750432231.bin"
+            if os.path.exists(original_dump):
+                try:
+                    import shutil
+                    organized_path = self.actuator_config.add_dump(
+                        g222_config_id,
+                        "initial_discovery_dump.bin",
+                        "Initial G-222 dump used for breakthrough discovery"
+                    )
+                    shutil.copy2(original_dump, organized_path)
+                    console.print(f"[dim]📁 Moved existing dump to organized structure: {organized_path}[/dim]")
+                except Exception as e:
+                    console.print(f"[yellow]⚠️  Could not move existing dump: {e}[/yellow]")
         
     def show_banner(self):
         """Display application banner."""
@@ -267,6 +298,102 @@ class HellaMenuSystem:
             else:
                 return False
     
+    def configure_actuator(self) -> bool:
+        """Configure the current actuator or select existing configuration."""
+        console.print("\n[bold]🔧 Actuator Configuration[/bold]")
+        
+        # List existing actuators
+        existing_actuators = self.actuator_config.list_actuators()
+        
+        if existing_actuators:
+            console.print("\n[dim]Existing actuator configurations:[/dim]")
+            for actuator in existing_actuators:
+                console.print(f"  {actuator['config_id']}: {actuator['gearbox_number']} "
+                            f"(Part: {actuator['electronic_part_number']}) - {actuator['description']}")
+        
+        choices = []
+        if existing_actuators:
+            choices.extend([f"📋 Use existing: {act['config_id']}" for act in existing_actuators])
+        choices.append("➕ Add new actuator configuration")
+        if existing_actuators:
+            choices.append("🔍 Manage existing configurations")
+        
+        questions = [
+            inquirer.List(
+                'choice',
+                message="Select actuator configuration",
+                choices=choices,
+            ),
+        ]
+        
+        answer = inquirer.prompt(questions)
+        if not answer:
+            return False
+        
+        choice = answer['choice']
+        
+        if choice.startswith("📋 Use existing"):
+            # Extract config_id from choice
+            config_id = choice.split(": ")[1]
+            self.current_actuator_id = config_id
+            actuator = self.actuator_config.get_actuator(config_id)
+            console.print(f"[green]✅ Using actuator: {actuator['gearbox_number']} "
+                         f"(Part: {actuator['electronic_part_number']})[/green]")
+            return True
+        
+        elif choice == "➕ Add new actuator configuration":
+            return self._add_new_actuator()
+        
+        elif choice == "🔍 Manage existing configurations":
+            return self._manage_configurations()
+        
+        return False
+    
+    def _add_new_actuator(self) -> bool:
+        """Add a new actuator configuration."""
+        console.print("\n[bold]➕ Add New Actuator[/bold]")
+        
+        questions = [
+            inquirer.Text('electronic_part', message="Electronic part number (e.g., 6NW-008-412)"),
+            inquirer.Text('gearbox_number', message="Gearbox number (e.g., G-222)"),
+            inquirer.Text('description', message="Description (optional)"),
+            inquirer.Text('can_id', message="Observed CAN ID (optional, e.g., 0x658)"),
+        ]
+        
+        answers = inquirer.prompt(questions)
+        if not answers:
+            return False
+        
+        try:
+            config_id = self.actuator_config.add_actuator(
+                electronic_part_number=answers['electronic_part'],
+                gearbox_number=answers['gearbox_number'],
+                description=answers.get('description', ''),
+                observed_can_id=answers.get('can_id', '')
+            )
+            
+            self.current_actuator_id = config_id
+            
+            dump_dir = self.actuator_config.get_dump_directory(
+                answers['electronic_part'], 
+                answers['gearbox_number']
+            )
+            
+            console.print(f"[green]✅ Added actuator configuration: {config_id}[/green]")
+            console.print(f"[dim]Dump directory: {dump_dir}[/dim]")
+            return True
+            
+        except Exception as e:
+            console.print(f"[red]❌ Error adding actuator: {e}[/red]")
+            return False
+    
+    def _manage_configurations(self) -> bool:
+        """Manage existing actuator configurations."""
+        # For now, just return to main flow
+        # Could add editing, deletion, etc. later
+        console.print("[yellow]Configuration management coming soon![/yellow]")
+        return self.configure_actuator()
+
     def main_menu(self):
         """Display and handle main menu."""
         if not self.hp:
@@ -339,17 +466,36 @@ class HellaMenuSystem:
         """Handle memory dump operation."""
         console.print("[bold]📁 Memory Dump Operation[/bold]")
         
-        # Ask for filename
-        default_name = f"actuator_dump_{int(time.time())}.bin"
-        custom_name = inquirer.prompt([
+        if not self.current_actuator_id:
+            console.print("[red]❌ No actuator configured![/red]")
+            return
+        
+        # Get actuator info
+        actuator = self.actuator_config.get_actuator(self.current_actuator_id)
+        console.print(f"[dim]Dumping memory for: {actuator['gearbox_number']} "
+                     f"(Part: {actuator['electronic_part_number']})[/dim]")
+        
+        # Ask for filename and notes
+        default_name = "memory_dump.bin"
+        questions = [
             inquirer.Text(
                 'filename', 
                 message="Enter filename (or press Enter for default)",
                 default=default_name
+            ),
+            inquirer.Text(
+                'notes',
+                message="Notes about this dump (optional)",
+                default=""
             )
-        ])
+        ]
         
-        filename = custom_name['filename'] if custom_name else default_name
+        answers = inquirer.prompt(questions)
+        if not answers:
+            return
+        
+        filename = answers['filename']
+        notes = answers['notes']
         
         with Progress(
             SpinnerColumn(),
@@ -359,7 +505,15 @@ class HellaMenuSystem:
             task = progress.add_task("Reading memory...", total=None)
             
             try:
-                result_filename = self.hp.readmemory(filename)
+                # Create organized dump path
+                organized_path = self.actuator_config.add_dump(
+                    self.current_actuator_id, 
+                    filename, 
+                    notes
+                )
+                
+                # Read memory to organized location
+                result_filename = self.hp.readmemory(organized_path)
                 progress.update(task, description="Memory dump completed!")
                 time.sleep(0.5)
                 
@@ -370,6 +524,8 @@ class HellaMenuSystem:
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     console.print(f"[dim]📏 File size: {file_size} bytes[/dim]")
+                    if notes:
+                        console.print(f"[dim]📝 Notes: {notes}[/dim]")
                     
             except Exception as e:
                 progress.update(task, description="Failed!")
@@ -704,14 +860,17 @@ class HellaMenuSystem:
         """Handle viewing memory dump with visualization."""
         console.print("[bold]📊 Memory Dump Visualization[/bold]")
         
-        # Find available dump files
-        dump_files = []
-        for pattern in ['*.bin', '*dump*.bin', 'actuator_*.bin']:
-            import glob
-            dump_files.extend(glob.glob(pattern))
+        # Find organized dump files from all actuators
+        all_dumps = self.actuator_config.find_all_dumps()
         
-        if not dump_files:
-            console.print("[yellow]⚠️  No memory dump files found in current directory[/yellow]")
+        # Also look for any loose dump files in current directory
+        import glob
+        loose_files = []
+        for pattern in ['*.bin', '*dump*.bin', 'actuator_*.bin']:
+            loose_files.extend(glob.glob(pattern))
+        
+        if not all_dumps and not loose_files:
+            console.print("[yellow]⚠️  No memory dump files found[/yellow]")
             
             # Offer to create one
             if Confirm.ask("Would you like to create a memory dump now?"):
@@ -720,21 +879,51 @@ class HellaMenuSystem:
             else:
                 return
         
+        # Build choices list
+        choices = []
+        
+        # Add organized dumps with actuator info
+        for dump in all_dumps:
+            if os.path.exists(dump['filename']):
+                choice_text = f"📁 {dump['gearbox_number']} ({dump['electronic_part_number']}) - {dump['original_name']}"
+                if dump['notes']:
+                    choice_text += f" - {dump['notes'][:50]}..."
+                choices.append((choice_text, dump['filename']))
+        
+        # Add loose files
+        for file in loose_files:
+            choices.append((f"📄 {file} (unorganized)", file))
+        
+        # Add option to specify custom path
+        choices.append(("🔍 Other (specify path)", "OTHER"))
+        
+        if not choices:
+            console.print("[red]❌ No accessible dump files found[/red]")
+            return
+        
         # Select file to view
         questions = [
             inquirer.List(
-                'filename',
+                'choice',
                 message="Select memory dump file to view",
-                choices=dump_files + ['Other (specify path)'],
+                choices=[choice[0] for choice in choices],
             ),
         ]
         
         answer = inquirer.prompt(questions)
         if not answer:
             return
-            
-        filename = answer['filename']
-        if filename == 'Other (specify path)':
+        
+        selected_choice = answer['choice']
+        
+        # Find the corresponding filename
+        filename = None
+        for choice_text, choice_filename in choices:
+            if choice_text == selected_choice:
+                filename = choice_filename
+                break
+        
+        if filename == "OTHER":
             filename = inquirer.prompt([
                 inquirer.Text('custom_file', message="Enter file path")
             ])['custom_file']
@@ -1099,6 +1288,11 @@ class HellaMenuSystem:
             # Establish connection
             if not self.establish_connection():
                 console.print("[red]❌ Could not establish connection. Exiting.[/red]")
+                return
+            
+            # Configure actuator
+            if not self.configure_actuator():
+                console.print("[red]❌ Actuator configuration required. Exiting.[/red]")
                 return
             
             # Main menu loop

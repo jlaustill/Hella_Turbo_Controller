@@ -1,0 +1,10 @@
+{
+  "6NW-008-412_G-222": {
+    "created_date": "2025-06-20T10:19:56.521021",
+    "description": "Primary test actuator - verified working",
+    "dumps": [],
+    "electronic_part_number": "6NW-008-412",
+    "gearbox_number": "G-222",
+    "observed_can_id": "0x658"
+  }
+}

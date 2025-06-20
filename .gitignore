@@ -45,10 +45,10 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-*.bin
 test.bin
-*.dump
 *.log
+temp_*
+test_*
 
 # Backup files
 *.bak
