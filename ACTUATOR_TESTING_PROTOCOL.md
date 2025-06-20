@@ -5,14 +5,21 @@
 ### Step 1: Initial Setup
 ```bash
 # 1. Power up actuator and connect CAN interface
-sudo ip link set can0 up type can bitrate 500000
+# 2. Run the menu system (it will auto-configure CAN interface)
+./run_menu.sh
 
-# 2. Monitor CAN traffic to identify actuator's CAN ID
+# 3. Monitor CAN traffic to identify actuator's CAN ID (if needed)
 candump can0
 
-# 3. Record the CAN ID and message format
+# 4. Record the CAN ID and message format
 # Example: can0  658   [8]  04 00 00 B2 00 19 00 00
 ```
+
+**Note**: The menu system now automatically:
+- Detects available CAN interfaces
+- Checks interface status (UP/DOWN, bitrate)
+- Configures interfaces with sudo prompts when needed
+- No manual `sudo ip link set` commands required!
 
 ### Step 2: Memory Dump
 ```bash

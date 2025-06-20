@@ -60,14 +60,20 @@ python3 hella_menu.py
 
 ### Interface Configuration
 
-The menu system supports:
+The menu system supports automatic CAN interface management:
 
-| Interface Type | Description | Example |
-|---------------|-------------|---------|
-| **SocketCAN** | Linux built-in CAN | can0, can1 |
-| **SLCAN** | USB-to-CAN adapters | /dev/ttyUSB0, /dev/ttyACM0 |
-| **Virtual CAN** | Testing with virtual interfaces | vcan0 |
-| **Custom** | Manual configuration | Any valid channel |
+| Interface Type | Description | Auto-Setup | Example |
+|---------------|-------------|------------|---------|
+| **SocketCAN** | Linux built-in CAN | ✅ Yes (with sudo) | can0, can1 |
+| **SLCAN** | USB-to-CAN adapters | ⚠️ Manual | /dev/ttyUSB0, /dev/ttyACM0 |
+| **Virtual CAN** | Testing with virtual interfaces | ✅ Yes (with sudo) | vcan0 |
+| **Custom** | Manual configuration | ❌ No | Any valid channel |
+
+**Automatic Setup Features:**
+- 🔍 **Auto-detection** of available CAN interfaces
+- 📊 **Status checking** (UP/DOWN, bitrate verification)
+- 🔧 **Automatic configuration** with sudo password prompt
+- ✅ **Smart reconfiguration** if bitrate needs to change
 
 ## Programmatic Usage
 

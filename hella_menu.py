@@ -37,6 +37,7 @@ except ImportError:
 
 from hella_prog import HellaProg, HellaProgError
 from actuator_config import ActuatorConfig
+from can_interface_manager import CANInterfaceManager
 
 console = Console()
 
@@ -132,22 +133,22 @@ class HellaMenuSystem:
     
     def _configure_socketcan(self) -> str:
         """Configure SocketCAN interface."""
-        # Check available CAN interfaces
-        available_interfaces = []
-        try:
-            with os.popen('ip link show type can') as f:
-                output = f.read()
-                for line in output.split('\n'):
-                    if 'can' in line and ':' in line:
-                        iface = line.split(':')[1].strip().split('@')[0]
-                        if iface.startswith('can'):
-                            available_interfaces.append(iface)
-        except:
-            pass
+        # Use the new CAN interface manager to detect interfaces
+        available_interfaces = CANInterfaceManager.get_can_interfaces()
         
         if not available_interfaces:
             available_interfaces = ['can0', 'can1']  # Default options
             console.print("[yellow]⚠️  No CAN interfaces detected. Showing common options.[/yellow]")
+            console.print("[dim]💡 Make sure your CAN hardware is connected[/dim]")
+        else:
+            console.print(f"[green]✅ Found CAN interfaces: {', '.join(available_interfaces)}[/green]")
+            
+            # Show status of each interface
+            for iface in available_interfaces:
+                is_up, state, bitrate = CANInterfaceManager.get_interface_status(iface)
+                status_color = "green" if is_up else "red"
+                bitrate_info = f" at {bitrate} bps" if bitrate else ""
+                console.print(f"[dim]   {iface}: [{status_color}]{state}[/{status_color}]{bitrate_info}[/dim]")
         
         questions = [
             inquirer.List(
@@ -232,6 +233,18 @@ class HellaMenuSystem:
             True if connection successful
         """
         console.print(f"[yellow]🔍 Testing connection to {interface_type}:{channel}...[/yellow]")
+        
+        # Auto-setup CAN interface if using SocketCAN
+        if interface_type.lower() == 'socketcan':
+            console.print(f"[dim]🔧 Checking CAN interface {channel} status...[/dim]")
+            
+            success, message = CANInterfaceManager.auto_setup_interface(channel, 500000)
+            if not success:
+                console.print(f"[red]❌ CAN interface setup failed: {message}[/red]")
+                console.print(f"[dim]💡 You may need to run: sudo ip link set {channel} up type can bitrate 500000[/dim]")
+                return False
+            else:
+                console.print(f"[green]✅ {message}[/green]")
         
         try:
             with Progress(
