@@ -160,7 +160,7 @@ with HellaProg('can0', 'socketcan') as hp:
 
 ## 📖 Documentation
 
-- **[MENU_GUIDE.md](MENU_GUIDE.md)**: Comprehensive user guide for the interactive menu
+- **[ROADMAP.md](ROADMAP.md)**: Project roadmap and development phases
 - **[MEMORY_LAYOUT.md](MEMORY_LAYOUT.md)**: Complete memory dump analysis and configuration guide
 - **[CLAUDE.md](CLAUDE.md)**: Technical documentation and API reference
 
