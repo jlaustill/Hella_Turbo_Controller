@@ -1,4 +1,3 @@
-
 {
   "name": "hella-turbo-controller",
   "version": "1.0.0",
@@ -27,6 +26,9 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "serve dist -p 8080",
+    "server": "tsx src/server/main.ts",
+    "api-server": "tsx src/server/api-server.ts",
+    "dev:full": "concurrently \"npm run dev\" \"npm run api-server\"",
     "electron:dev": "concurrently \"npm run dev\" \"npm run electron:build-main && wait-on http://localhost:3000 && electron . --no-sandbox\"",
     "electron:build-main": "tsc electron/*.ts --outDir dist-electron --target es2020 --module commonjs --moduleResolution node --esModuleInterop && mv dist-electron/main.js dist-electron/main.cjs",
     "electron:build": "npm run build && electron-builder",
@@ -48,14 +50,20 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
+    "cors": "^2.8.5",
     "electron": "^28.2.0",
     "electron-squirrel-startup": "^1.0.1",
+    "express": "^5.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "socketcan": "^2.3.0"
+    "socketcan": "^2.3.0",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/node": "^20.11.16",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitest/ui": "^1.2.2",
@@ -74,6 +82,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "prettier": "^3.2.4",
+    "tsx": "^4.20.3",
     "typescript": "^5.3.3",
     "vite": "^5.0.12",
     "vitest": "^1.2.2",

@@ -19,11 +19,11 @@ import {
 } from '@mui/material';
 import { Wifi, WifiOff, Refresh, Update, AutoFixHigh, Download } from '@mui/icons-material';
 
-function ActuatorManager() {
-  const [selectedInterface, setSelectedInterface] = useState('socketcan');
-  const [channel, setChannel] = useState('can0');
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  const [connecting, setConnecting] = useState(false);
+interface ActuatorManagerProps {
+  canConnected?: boolean;
+}
+
+function ActuatorManager({ canConnected = false }: ActuatorManagerProps) {
   const [newMinPosition, setNewMinPosition] = useState('');
   const [newMaxPosition, setNewMaxPosition] = useState('');
 
@@ -34,21 +34,6 @@ function ActuatorManager() {
     maxPosition: '0x0220',
   };
 
-  const handleConnect = async () => {
-    if (connectionStatus === 'connected') {
-      setConnectionStatus('disconnected');
-      return;
-    }
-
-    setConnecting(true);
-    setConnectionStatus('connecting');
-    
-    // Simulate connection
-    setTimeout(() => {
-      setConnectionStatus('connected');
-      setConnecting(false);
-    }, 2000);
-  };
 
   return (
     <Box>
@@ -61,56 +46,15 @@ function ActuatorManager() {
         damage your actuator. Always backup memory before making changes.
       </Alert>
 
+      {!canConnected && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <strong>Note:</strong> Connect to your CAN interface using the sidebar 
+          to enable actuator management features.
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              CAN Interface Setup
-            </Typography>
-            
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>CAN Interface</InputLabel>
-              <Select
-                value={selectedInterface}
-                label="CAN Interface"
-                onChange={(e) => setSelectedInterface(e.target.value)}
-              >
-                <MenuItem value="socketcan">SocketCAN</MenuItem>
-                <MenuItem value="slcan">SLCAN</MenuItem>
-                <MenuItem value="virtual">Virtual CAN</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              fullWidth
-              label="Channel"
-              value={channel}
-              onChange={(e) => setChannel(e.target.value)}
-              helperText="e.g., can0, /dev/ttyUSB0"
-              sx={{ mb: 3 }}
-            />
-
-            <Button
-              fullWidth
-              variant="contained"
-              color={connectionStatus === 'connected' ? 'error' : 'primary'}
-              onClick={handleConnect}
-              disabled={connecting}
-              startIcon={connectionStatus === 'connected' ? <WifiOff /> : <Wifi />}
-              sx={{ mb: 2 }}
-            >
-              {connectionStatus === 'connected' ? 'Disconnect' : 'Connect'}
-            </Button>
-
-            <Chip
-              label={connectionStatus}
-              color={connectionStatus === 'connected' ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Actuator Information
@@ -146,7 +90,7 @@ function ActuatorManager() {
             <Button
               variant="outlined"
               startIcon={<Refresh />}
-              disabled={connectionStatus !== 'connected'}
+              disabled={!canConnected}
               sx={{ mt: 2 }}
             >
               Refresh Info
@@ -168,7 +112,7 @@ function ActuatorManager() {
                   value={newMinPosition}
                   onChange={(e) => setNewMinPosition(e.target.value)}
                   placeholder="0x0113"
-                  disabled={connectionStatus !== 'connected'}
+                  disabled={!canConnected}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -178,7 +122,7 @@ function ActuatorManager() {
                   value={newMaxPosition}
                   onChange={(e) => setNewMaxPosition(e.target.value)}
                   placeholder="0x0220"
-                  disabled={connectionStatus !== 'connected'}
+                  disabled={!canConnected}
                 />
               </Grid>
               <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
@@ -187,7 +131,7 @@ function ActuatorManager() {
                   variant="contained"
                   color="warning"
                   startIcon={<Update />}
-                  disabled={connectionStatus !== 'connected' || !newMinPosition || !newMaxPosition}
+                  disabled={!canConnected || !newMinPosition || !newMaxPosition}
                 >
                   Update Positions
                 </Button>
@@ -200,7 +144,7 @@ function ActuatorManager() {
               <Button
                 variant="contained"
                 startIcon={<AutoFixHigh />}
-                disabled={connectionStatus !== 'connected'}
+                disabled={!canConnected}
               >
                 Auto Calibrate
               </Button>
@@ -208,7 +152,7 @@ function ActuatorManager() {
                 variant="contained"
                 color="info"
                 startIcon={<Download />}
-                disabled={connectionStatus !== 'connected'}
+                disabled={!canConnected}
               >
                 Read Memory
               </Button>

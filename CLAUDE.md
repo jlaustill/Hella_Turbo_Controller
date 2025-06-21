@@ -177,6 +177,30 @@ git commit -S -m "Test signed commit"
 
 This policy protects the community from potentially dangerous unsigned commits.
 
+## 🚫 CRITICAL: NO MOCK/SIMULATION DATA POLICY
+
+**NEVER implement mock, simulated, or fake CAN traffic under ANY circumstances.**
+
+This is a hardware reverse engineering project working with real actuators. Mock data:
+- ❌ **Misleads developers** about actual hardware behavior
+- ❌ **Masks real connectivity issues** that need to be fixed
+- ❌ **Creates false confidence** in non-working systems
+- ❌ **Wastes time** debugging fake problems
+- ❌ **Dangerous for hardware** - real actuators behave differently than simulations
+
+**When CAN traffic isn't working:**
+- ✅ **Show clear error messages** explaining the hardware requirement
+- ✅ **Provide troubleshooting steps** for real hardware setup
+- ✅ **Display connection status** (connected/disconnected/error)
+- ✅ **Guide users to fix the real problem** (hardware, drivers, permissions)
+
+**If you need to test without hardware:**
+- ✅ **Use real CAN hardware** with actual actuators
+- ✅ **Set up proper CAN interfaces** (can0, can1, etc.)
+- ✅ **Test with real vcan interfaces** if absolutely necessary for development
+
+**Remember:** This tool controls expensive automotive hardware that can be permanently damaged. Only real data should ever be displayed to users.
+
 ## Improvements Made
 
 ### Core Library (hella_prog.py)
