@@ -83,7 +83,7 @@ class SocketServer {
     }
   }
 
-  private handleMessage(clientId: string, data: any): void {
+  private handleMessage(_clientId: string, data: any): void {
     try {
       const message = JSON.parse(data.toString());
 

@@ -3,7 +3,7 @@
  * Handles system-level CAN interface configuration
  */
 
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { spawn } from "child_process";
 import { createServer } from "http";
@@ -51,7 +51,7 @@ interface CANSetupResponse {
  * Setup CAN interface endpoint
  * POST /api/can-setup
  */
-app.post("/api/can-setup", async (req, res) => {
+app.post("/api/can-setup", async (req: Request, res: Response) => {
   try {
     const { channel, bitrate = 500000 }: CANSetupRequest = req.body;
 
@@ -101,7 +101,7 @@ app.post("/api/can-setup", async (req, res) => {
  * Get CAN interface status
  * GET /api/can-status/:channel
  */
-app.get("/api/can-status/:channel", async (req, res) => {
+app.get("/api/can-status/:channel", async (req: Request, res: Response) => {
   try {
     const { channel } = req.params;
 
@@ -126,7 +126,7 @@ app.get("/api/can-status/:channel", async (req, res) => {
  * List available CAN interfaces
  * GET /api/can-interfaces
  */
-app.get("/api/can-interfaces", async (req, res) => {
+app.get("/api/can-interfaces", async (_req, res) => {
   try {
     const interfaces = await listCANInterfaces();
     res.json({
@@ -299,7 +299,7 @@ async function listCANInterfaces(): Promise<string[]> {
 }
 
 // Health check endpoint
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
     message: "CAN API server is running",
@@ -380,7 +380,7 @@ if (require.main === module) {
             `📡 Real CAN message received: ID=0x${msg.id.toString(16)}, Data=[${Array.from(
               msg.data,
             )
-              .map((b: number) => `0x${b.toString(16).padStart(2, "0")}`)
+              .map((b) => `0x${(b as number).toString(16).padStart(2, "0")}`)
               .join(", ")}]`,
           );
 

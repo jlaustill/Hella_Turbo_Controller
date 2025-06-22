@@ -214,11 +214,11 @@ export class CANService {
     }
   }
 
-  private async connectVirtual(): Promise<void> {
+  /* private async connectVirtual(): Promise<void> { // Unused method
     throw new HellaProgError(
       "Virtual CAN interfaces are not supported. Use socketcan for real hardware.",
     );
-  }
+  } */
 
   private async setupCANInterface(): Promise<void> {
     try {

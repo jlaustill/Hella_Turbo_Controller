@@ -74,7 +74,7 @@ function App() {
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     setCurrentView(newValue);
   };
 

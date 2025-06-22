@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react"; // Not needed in React 17+
 import {
   Typography,
   Paper,
@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   Button,
-  Grid,
   Stepper,
   Step,
   StepLabel,
@@ -25,8 +24,8 @@ function Dashboard() {
         Welcome to Hella Turbo Controller
       </Typography>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box sx={{ mb: 2 }}>
           <Paper sx={{ p: 3 }}>
             <Alert severity="info" sx={{ mb: 3 }}>
               <strong>🎉 New TypeScript Version!</strong> This is the modern,
@@ -76,9 +75,9 @@ function Dashboard() {
               understand the analysis before making changes.
             </Alert>
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        <Box sx={{ mb: 2, flex: 1 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Quick Start
@@ -91,9 +90,9 @@ function Dashboard() {
               ))}
             </Stepper>
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        <Box sx={{ mb: 2, flex: 1 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Legacy Python Version
@@ -106,8 +105,8 @@ function Dashboard() {
               View Legacy Tools
             </Button>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 }

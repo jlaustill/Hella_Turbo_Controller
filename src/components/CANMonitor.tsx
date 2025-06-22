@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Paper,
@@ -7,7 +7,7 @@ import {
   Switch,
   FormControlLabel,
   TextField,
-  Grid,
+  // Grid, // Replaced with Box
   Chip,
   Alert,
 } from "@mui/material";
@@ -193,8 +193,8 @@ function CANMonitor() {
         This monitor displays real-time traffic when connected.
       </Alert>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box sx={{ flex: 1 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Monitor Controls
@@ -244,9 +244,9 @@ function CANMonitor() {
               </Button>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={8}>
+        <Box sx={{ flex: 2 }}>
           <Paper sx={{ p: 3 }}>
             <Box
               sx={{
@@ -318,8 +318,8 @@ function CANMonitor() {
               ))}
             </Box>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 }

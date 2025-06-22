@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { createServer, Server } from "http";
 import CanService from "../domain/CanService";
@@ -47,7 +47,7 @@ class RestServer {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get("/api/health", (req, res) => {
+    this.app.get("/api/health", (_req, res) => {
       res.json({
         success: true,
         message: "CAN API server is running",
@@ -57,7 +57,7 @@ class RestServer {
     });
 
     // CAN interface setup
-    this.app.post("/api/can-setup", async (req, res) => {
+    this.app.post("/api/can-setup", async (req: Request, res: Response) => {
       try {
         const { channel, bitrate = 500000 }: IHttpRequest = req.body;
 
@@ -100,7 +100,7 @@ class RestServer {
     });
 
     // Get CAN status
-    this.app.get("/api/can-status", (req, res) => {
+    this.app.get("/api/can-status", (_req, res) => {
       res.json({
         success: true,
         status: this.canService.getStatus(),

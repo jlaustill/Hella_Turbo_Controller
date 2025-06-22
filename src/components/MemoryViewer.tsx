@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react"; // Not needed in React 17+
 import { Typography, Paper, Box } from "@mui/material";
 
 function MemoryViewer() {
