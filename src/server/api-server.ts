@@ -27,6 +27,7 @@ interface SocketCAN {
 
 // Import socketcan library
 const socketcan: SocketCAN = require("socketcan");
+const socketcanPackageJson = require("../../../node_modules/socketcan/package.json");
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -75,21 +76,21 @@ app.post("/api/can-setup", async (req, res) => {
     const setupResult = await setupCANInterface(channel, bitrate);
 
     if (setupResult.success) {
-      res.json({
+      return res.json({
         success: true,
         message: `CAN interface ${channel} setup successfully`,
         channel,
         bitrate,
       } as CANSetupResponse);
-    } else {
-      res.status(500).json({
-        success: false,
-        message: setupResult.message,
-      } as CANSetupResponse);
     }
+
+    return res.status(500).json({
+      success: false,
+      message: setupResult.message,
+    } as CANSetupResponse);
   } catch (error: any) {
     console.error("CAN setup error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: `CAN setup failed: ${error.message}`,
     } as CANSetupResponse);
@@ -112,9 +113,9 @@ app.get("/api/can-status/:channel", async (req, res) => {
     }
 
     const status = await getCANStatus(channel);
-    res.json(status);
+    return res.json(status);
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: `Failed to get CAN status: ${error.message}`,
     });
@@ -169,11 +170,10 @@ async function setupCANInterface(
       const [cmd, ...args] = command.split(" ");
       const process = spawn(cmd, args);
 
-      let stdout = "";
       let stderr = "";
 
-      process.stdout?.on("data", (data) => {
-        stdout += data.toString();
+      process.stdout?.on("data", () => {
+        // Ignore stdout for this command
       });
 
       process.stderr?.on("data", (data) => {
@@ -214,14 +214,13 @@ async function getCANStatus(channel: string): Promise<any> {
     const process = spawn("ip", ["link", "show", channel]);
 
     let stdout = "";
-    let stderr = "";
 
     process.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    process.stderr.on("data", (data) => {
-      stderr += data.toString();
+    process.stderr.on("data", () => {
+      // Ignore stderr for status check
     });
 
     process.on("close", (code) => {
@@ -229,10 +228,17 @@ async function getCANStatus(channel: string): Promise<any> {
         const isUp = stdout.includes("UP");
         const isRunning = stdout.includes("RUNNING");
 
+        let status: string;
+        if (isUp) {
+          status = isRunning ? "running" : "up";
+        } else {
+          status = "down";
+        }
+
         resolve({
           success: true,
           channel,
-          status: isUp ? (isRunning ? "running" : "up") : "down",
+          status,
           details: stdout.trim(),
         });
       } else {
@@ -259,14 +265,13 @@ async function listCANInterfaces(): Promise<string[]> {
     const process = spawn("ip", ["link", "show", "type", "can"]);
 
     let stdout = "";
-    let stderr = "";
 
     process.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    process.stderr.on("data", (data) => {
-      stderr += data.toString();
+    process.stderr.on("data", () => {
+      // Ignore stderr for interface listing
     });
 
     process.on("close", (code) => {
@@ -449,7 +454,7 @@ if (require.main === module) {
       `🚀 CAN API server with WebSocket support running on port ${PORT}`,
     );
     console.log(
-      `📡 Using mature Node.js socketcan library v${require("../../../node_modules/socketcan/package.json").version}`,
+      `📡 Using mature Node.js socketcan library v${socketcanPackageJson.version}`,
     );
     console.log(`🌐 HTTP API: http://localhost:${PORT}/api/health`);
     console.log(`🔌 WebSocket: ws://localhost:${PORT}/ws/can/{channel}`);

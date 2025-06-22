@@ -84,7 +84,7 @@ class RestServer {
 
         await this.canService.connect(canInterface);
 
-        res.json({
+        return res.json({
           success: true,
           message: `CAN interface ${channel} setup successfully`,
           channel,
@@ -92,7 +92,7 @@ class RestServer {
         });
       } catch (error: any) {
         console.error("CAN setup error:", error);
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           message: `CAN setup failed: ${error.message}`,
         });

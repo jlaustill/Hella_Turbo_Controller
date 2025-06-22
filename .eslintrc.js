@@ -27,7 +27,7 @@ module.exports = {
   rules: {
     // Hardware safety rules
     "no-bitwise": "off", // Allow bitwise for CAN operations
-    "no-console": "warn", // Allow console for debugging
+    "no-console": "off", // Essential for CAN debugging
     "prefer-const": "error", // Prevent accidental mutations
 
     // React specific
@@ -36,6 +36,15 @@ module.exports = {
     // Import rules
     "import/no-extraneous-dependencies": ["error", { devDependencies: true }],
     "import/extensions": "off", // Allow missing extensions with bundlers
+    "import/no-import-module-exports": "off", // Node.js ES modules
+
+    // Code quality rules
+    "no-nested-ternary": "error", // Force fixing nested ternaries
+    "no-restricted-syntax": "off", // Allow for-of loops
+    "no-await-in-loop": "error", // Force fixing await in loops
+    "consistent-return": "error", // Force fixing return consistency
+    "no-plusplus": "off", // Allow ++ operator
+    "global-require": "error", // Force fixing dynamic requires
 
     // TypeScript specific
     "@typescript-eslint/no-unused-vars": "error",

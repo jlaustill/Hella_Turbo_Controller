@@ -81,7 +81,9 @@ class CanBus {
       `sudo ip link set ${channel} up`,
     ];
 
-    for (const command of commands) {
+    // Execute commands sequentially using reduce to avoid await-in-loop
+    await commands.reduce(async (previousPromise, command) => {
+      await previousPromise;
       try {
         await this.executeCommand(command);
       } catch (error) {
@@ -89,7 +91,7 @@ class CanBus {
           `CAN setup command failed: ${command}. Interface may already be configured.`,
         );
       }
-    }
+    }, Promise.resolve());
   }
 
   private executeCommand(command: string): Promise<void> {

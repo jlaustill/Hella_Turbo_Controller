@@ -34,7 +34,7 @@ function Dashboard() {
             </Alert>
 
             <Typography variant="h6" gutterBottom>
-              🔧 What's New:
+              🔧 What&apos;s New:
             </Typography>
             <List>
               <ListItem>

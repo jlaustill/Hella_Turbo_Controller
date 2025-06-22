@@ -396,11 +396,11 @@ function CANStatusSidebar({ onConnectionChange }: CANStatusSidebarProps) {
           disabled={connectionStatus === "connecting"}
           size="small"
         >
-          {connectionStatus === "connecting"
-            ? "Connecting..."
-            : connectionStatus === "connected"
-              ? "Disconnect"
-              : "Connect"}
+          {(() => {
+            if (connectionStatus === "connecting") return "Connecting...";
+            if (connectionStatus === "connected") return "Disconnect";
+            return "Connect";
+          })()}
         </Button>
       </CardActions>
     </Card>
