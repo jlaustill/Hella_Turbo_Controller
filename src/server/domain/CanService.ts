@@ -22,10 +22,10 @@ class CanService {
     this.setupMessageHandling();
   }
 
-  async connect(canInterface: ICanInterface): Promise<void> {
+  async connect(canInterface: ICanInterface, sudoPassword: string): Promise<void> {
     try {
       this.status = EConnectionStatus.CONNECTING;
-      await this.canBus.connect(canInterface);
+      await this.canBus.connect(canInterface, sudoPassword);
       this.status = EConnectionStatus.CONNECTED;
     } catch (error) {
       this.status = EConnectionStatus.ERROR;

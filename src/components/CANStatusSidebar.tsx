@@ -311,70 +311,92 @@ function CANStatusSidebar({ onConnectionChange }: CANStatusSidebarProps) {
         )}
 
         {/* Interface Settings */}
-        <Box sx={{ mt: 2 }}>
-          <Button
-            size="small"
-            onClick={() => setShowSettings(!showSettings)}
-            startIcon={<Settings />}
-            endIcon={showSettings ? <ExpandLess /> : <ExpandMore />}
-            sx={{ width: "100%" }}
-            disabled={connectionStatus === "connected"}
-          >
-            Interface Setup
-          </Button>
+        <Card variant="outlined" sx={{ mt: 2 }}>
+          <CardContent sx={{ p: 2 }}>
+            <Button
+              size="small"
+              onClick={() => setShowSettings(!showSettings)}
+              startIcon={<Settings />}
+              endIcon={showSettings ? <ExpandLess /> : <ExpandMore />}
+              sx={{ width: "100%", mb: 1 }}
+              disabled={connectionStatus === "connected"}
+            >
+              Interface Setup
+            </Button>
 
-          <Collapse in={showSettings}>
-            <Divider sx={{ my: 1 }} />
+            <Collapse in={showSettings}>
+              <Divider sx={{ my: 1 }} />
 
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel>Interface Type</InputLabel>
-              <Select
-                value={selectedInterface}
-                label="Interface Type"
-                onChange={(e) =>
-                  handleInterfaceChange(e.target.value as "socketcan" | "slcan")
-                }
-                disabled={connectionStatus === "connected"}
-              >
-                <MenuItem value="socketcan">SocketCAN</MenuItem>
-                <MenuItem value="slcan">SLCAN</MenuItem>
-              </Select>
-            </FormControl>
+              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                <InputLabel>Interface Type</InputLabel>
+                <Select
+                  value={selectedInterface}
+                  label="Interface Type"
+                  onChange={(e) =>
+                    handleInterfaceChange(e.target.value as "socketcan" | "slcan")
+                  }
+                  disabled={connectionStatus === "connected"}
+                >
+                  <MenuItem value="socketcan">SocketCAN</MenuItem>
+                  <MenuItem value="slcan">SLCAN</MenuItem>
+                </Select>
+              </FormControl>
 
-            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Channel"
-                value={channel}
-                onChange={(e) => setChannel(e.target.value)}
-                disabled={connectionStatus === "connected"}
-                helperText={
-                  selectedInterface === "socketcan"
-                    ? "e.g., can0"
-                    : "e.g., /dev/ttyUSB0"
-                }
-              />
-              <IconButton
-                size="small"
-                onClick={loadAvailableInterfaces}
-                disabled={connectionStatus === "connected"}
-                title="Refresh interfaces"
-              >
-                <Refresh />
-              </IconButton>
-            </Box>
+              <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Channel"
+                  value={channel}
+                  onChange={(e) => setChannel(e.target.value)}
+                  disabled={connectionStatus === "connected"}
+                  helperText={
+                    selectedInterface === "socketcan"
+                      ? "e.g., can0"
+                      : "e.g., /dev/ttyUSB0"
+                  }
+                />
+                <IconButton
+                  size="small"
+                  onClick={loadAvailableInterfaces}
+                  disabled={connectionStatus === "connected"}
+                  title="Refresh interfaces"
+                >
+                  <Refresh />
+                </IconButton>
+              </Box>
 
-            {availableInterfaces.length > 0 &&
-              selectedInterface === "socketcan" && (
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Available: {availableInterfaces.join(", ")}
-                  </Typography>
-                </Box>
-              )}
-          </Collapse>
-        </Box>
+              {availableInterfaces.length > 0 &&
+                selectedInterface === "socketcan" && (
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Available: {availableInterfaces.join(", ")}
+                    </Typography>
+                  </Box>
+                )}
+            </Collapse>
+          </CardContent>
+          
+          <CardActions sx={{ p: 2, pt: 0 }}>
+            <Button
+              fullWidth
+              variant={connectionStatus === "connected" ? "outlined" : "contained"}
+              color={connectionStatus === "connected" ? "error" : "primary"}
+              startIcon={
+                connectionStatus === "connected" ? <Stop /> : <PlayArrow />
+              }
+              onClick={handleConnect}
+              disabled={connectionStatus === "connecting"}
+              size="small"
+            >
+              {(() => {
+                if (connectionStatus === "connecting") return "Connecting...";
+                if (connectionStatus === "connected") return "Disconnect";
+                return "Connect";
+              })()}
+            </Button>
+          </CardActions>
+        </Card>
 
         {connectionStatus === "disconnected" && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -383,26 +405,6 @@ function CANStatusSidebar({ onConnectionChange }: CANStatusSidebarProps) {
           </Typography>
         )}
       </CardContent>
-
-      <CardActions sx={{ p: 2, pt: 0 }}>
-        <Button
-          fullWidth
-          variant={connectionStatus === "connected" ? "outlined" : "contained"}
-          color={connectionStatus === "connected" ? "error" : "primary"}
-          startIcon={
-            connectionStatus === "connected" ? <Stop /> : <PlayArrow />
-          }
-          onClick={handleConnect}
-          disabled={connectionStatus === "connecting"}
-          size="small"
-        >
-          {(() => {
-            if (connectionStatus === "connecting") return "Connecting...";
-            if (connectionStatus === "connected") return "Disconnect";
-            return "Connect";
-          })()}
-        </Button>
-      </CardActions>
     </Card>
   );
 }

@@ -23,12 +23,11 @@
     "url": "https://github.com/jlaustill/Hella_Turbo_Controller.git"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"npm run api-server\"",
     "build": "vite build",
     "serve": "serve dist -p 8080",
     "server": "tsx src/server/main.ts",
     "api-server": "tsx src/server/api-server.ts",
-    "dev:full": "concurrently \"npm run dev\" \"npm run api-server\"",
     "electron:dev": "concurrently \"npm run dev\" \"npm run electron:build-main && wait-on http://localhost:3000 && electron . --no-sandbox\"",
     "electron:build-main": "tsc electron/*.ts --outDir dist-electron --target es2020 --module commonjs --moduleResolution node --esModuleInterop && mv dist-electron/main.js dist-electron/main.cjs",
     "electron:build": "npm run build && electron-builder",

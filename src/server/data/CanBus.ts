@@ -9,11 +9,12 @@ class CanBus {
   private socket: ISocketCanChannel | null = null;
   private messageListeners: Array<(message: ICanMessage) => void> = [];
 
-  async connect(canInterface: ICanInterface): Promise<void> {
+  async connect(canInterface: ICanInterface, sudoPassword: string): Promise<void> {
     // Setup CAN interface first
     await this.setupCANInterface(
       canInterface.channel,
       canInterface.bitrate || 500000,
+      sudoPassword,
     );
 
     // Create socketcan channel
@@ -74,11 +75,12 @@ class CanBus {
   private async setupCANInterface(
     channel: string,
     bitrate: number,
+    sudoPassword: string,
   ): Promise<void> {
     const commands = [
-      `sudo ip link set ${channel} down`,
-      `sudo ip link set ${channel} type can bitrate ${bitrate}`,
-      `sudo ip link set ${channel} up`,
+      `echo "${sudoPassword}" | sudo -S ip link set ${channel} down`,
+      `echo "${sudoPassword}" | sudo -S ip link set ${channel} type can bitrate ${bitrate}`,
+      `echo "${sudoPassword}" | sudo -S ip link set ${channel} up`,
     ];
 
     // Execute commands sequentially using reduce to avoid await-in-loop

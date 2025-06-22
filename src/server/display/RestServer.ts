@@ -59,12 +59,19 @@ class RestServer {
     // CAN interface setup
     this.app.post("/api/can-setup", async (req: Request, res: Response) => {
       try {
-        const { channel, bitrate = 500000 }: IHttpRequest = req.body;
+        const { channel, bitrate = 500000, sudoPassword }: IHttpRequest = req.body;
 
         if (!channel) {
           return res.status(400).json({
             success: false,
             message: "Channel is required",
+          });
+        }
+
+        if (!sudoPassword) {
+          return res.status(400).json({
+            success: false,
+            message: "Sudo password is required",
           });
         }
 
@@ -82,7 +89,7 @@ class RestServer {
           bitrate,
         };
 
-        await this.canService.connect(canInterface);
+        await this.canService.connect(canInterface, sudoPassword);
 
         return res.json({
           success: true,

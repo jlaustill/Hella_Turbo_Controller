@@ -9,6 +9,8 @@ import { spawn } from "child_process";
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { URL } from "url";
+import socketcan from "socketcan";
+import socketcanPackageJson from "socketcan/package.json" assert { type: "json" };
 
 // Type definitions for socketcan (no @types available)
 interface SocketCANChannel {
@@ -20,14 +22,6 @@ interface SocketCANChannel {
     callback: (msg: { id: number; data: Buffer }) => void,
   ): void;
 }
-
-interface SocketCAN {
-  createRawChannel(channel: string, timestamps?: boolean): SocketCANChannel;
-}
-
-// Import socketcan library
-const socketcan: SocketCAN = require("socketcan");
-const socketcanPackageJson = require("../../../node_modules/socketcan/package.json");
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -333,7 +327,7 @@ async function setupRealCANSocket(channel: string): Promise<SocketCANChannel> {
 }
 
 // Start server with WebSocket support
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const server = createServer(app);
 
   // Create WebSocket server
@@ -460,8 +454,6 @@ if (require.main === module) {
     console.log(`🔌 WebSocket: ws://localhost:${PORT}/ws/can/{channel}`);
     console.log(`✅ Ready for real CAN hardware communication!`);
   });
-} else {
-  module.exports = app;
 }
 
 export default app;
