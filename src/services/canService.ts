@@ -1,6 +1,6 @@
 /**
  * CAN Bus Communication Service for Hella Turbo Actuators
- * 
+ *
  * Provides real CAN bus communication using socketcan (Linux) or simulation
  */
 
@@ -13,15 +13,18 @@ export interface CANMessage {
 }
 
 export interface CANInterface {
-  type: 'socketcan' | 'slcan';
+  type: "socketcan" | "slcan";
   channel: string;
   bitrate?: number;
 }
 
 export class HellaProgError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
     super(message);
-    this.name = 'HellaProgError';
+    this.name = "HellaProgError";
   }
 }
 
@@ -35,10 +38,10 @@ export class CANService {
 
   // CAN Message IDs for Hella actuators
   static readonly CAN_IDS = {
-    REQUEST: 0x3F0,      // Request messages to actuator
-    MEMORY_RESPONSE: 0x3E8,  // Memory read responses
-    POSITION_RESPONSE: 0x3EA, // Position status responses  
-    ACK_RESPONSE: 0x3EB,     // Acknowledgment responses
+    REQUEST: 0x3f0, // Request messages to actuator
+    MEMORY_RESPONSE: 0x3e8, // Memory read responses
+    POSITION_RESPONSE: 0x3ea, // Position status responses
+    ACK_RESPONSE: 0x3eb, // Acknowledgment responses
   };
 
   constructor(private canInterface: CANInterface) {}
@@ -48,16 +51,20 @@ export class CANService {
    */
   async connect(): Promise<void> {
     try {
-      if (this.canInterface.type === 'socketcan') {
+      if (this.canInterface.type === "socketcan") {
         await this.connectSocketCAN();
       } else {
-        throw new HellaProgError(`Unsupported interface type: ${this.canInterface.type}. Only 'socketcan' is supported.`);
+        throw new HellaProgError(
+          `Unsupported interface type: ${this.canInterface.type}. Only 'socketcan' is supported.`,
+        );
       }
 
       this.isConnected = true;
       this.setupMessageHandling();
     } catch (error: any) {
-      throw new HellaProgError(`Failed to connect to CAN interface: ${error.message}`);
+      throw new HellaProgError(
+        `Failed to connect to CAN interface: ${error.message}`,
+      );
     }
   }
 
@@ -84,7 +91,7 @@ export class CANService {
    */
   async sendMessage(id: number, data: Uint8Array): Promise<void> {
     if (!this.isConnected) {
-      throw new HellaProgError('Not connected to CAN interface');
+      throw new HellaProgError("Not connected to CAN interface");
     }
 
     const message: CANMessage = {
@@ -96,11 +103,11 @@ export class CANService {
     try {
       if (this.socketcanWorker) {
         this.socketcanWorker.postMessage({
-          type: 'send',
+          type: "send",
           message: {
             id: message.id,
             data: Array.from(message.data),
-          }
+          },
         });
       }
     } catch (error: any) {
@@ -130,23 +137,28 @@ export class CANService {
    */
   async readCurrentPosition(): Promise<number> {
     if (!this.isConnected) {
-      throw new HellaProgError('Not connected to CAN interface');
+      throw new HellaProgError("Not connected to CAN interface");
     }
 
     try {
       // Send position request
-      const requestData = new Uint8Array([0x22, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00]);
+      const requestData = new Uint8Array([
+        0x22, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00,
+      ]);
       await this.sendMessage(CANService.CAN_IDS.REQUEST, requestData);
 
       // Wait for response
-      const response = await this.waitForMessage(CANService.CAN_IDS.POSITION_RESPONSE, 1000);
-      
+      const response = await this.waitForMessage(
+        CANService.CAN_IDS.POSITION_RESPONSE,
+        1000,
+      );
+
       // Extract position from bytes 2-3 (corrected from previous 5-6 assumption)
       if (response.data.length >= 4) {
         return (response.data[2] << 8) | response.data[3];
       }
 
-      throw new HellaProgError('Invalid position response format');
+      throw new HellaProgError("Invalid position response format");
     } catch (error: any) {
       throw new HellaProgError(`Failed to read position: ${error.message}`);
     }
@@ -158,55 +170,68 @@ export class CANService {
     try {
       // First, try to bring up the CAN interface using the system
       await this.setupCANInterface();
-      
+
       // Create a Web Worker to handle socketcan communication
-      this.socketcanWorker = new Worker(new URL('../workers/socketcanWorker.js', import.meta.url));
-      
+      this.socketcanWorker = new Worker(
+        new URL("../workers/socketcanWorker.js", import.meta.url),
+      );
+
       // Initialize the worker with our interface
       this.socketcanWorker.postMessage({
-        type: 'connect',
+        type: "connect",
         channel: this.canInterface.channel,
       });
 
       // Wait for connection confirmation
       await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
-        
+        const timeout = setTimeout(
+          () => reject(new Error("Connection timeout")),
+          5000,
+        );
+
         const messageHandler = (event: MessageEvent) => {
-          if (event.data.type === 'connected') {
+          if (event.data.type === "connected") {
             clearTimeout(timeout);
-            this.socketcanWorker?.removeEventListener('message', messageHandler);
+            this.socketcanWorker?.removeEventListener(
+              "message",
+              messageHandler,
+            );
             resolve(true);
-          } else if (event.data.type === 'error') {
+          } else if (event.data.type === "error") {
             clearTimeout(timeout);
-            this.socketcanWorker?.removeEventListener('message', messageHandler);
+            this.socketcanWorker?.removeEventListener(
+              "message",
+              messageHandler,
+            );
             reject(new Error(event.data.message));
           }
         };
-        
-        this.socketcanWorker?.addEventListener('message', messageHandler);
+
+        this.socketcanWorker?.addEventListener("message", messageHandler);
       });
-      
     } catch (error: any) {
       throw new HellaProgError(`SocketCAN connection failed: ${error.message}`);
     }
   }
 
   private async connectVirtual(): Promise<void> {
-    throw new HellaProgError('Virtual CAN interfaces are not supported. Use socketcan for real hardware.');
+    throw new HellaProgError(
+      "Virtual CAN interfaces are not supported. Use socketcan for real hardware.",
+    );
   }
 
   private async setupCANInterface(): Promise<void> {
     try {
       // Try to setup CAN interface - this might require sudo
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/can-setup'
-        : '/api/can-setup';
-        
+      const apiUrl =
+        process.env.NODE_ENV === "development"
+          ? "http://localhost:3001/api/can-setup"
+          : "/api/can-setup";
+
       const response = await fetch(apiUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           channel: this.canInterface.channel,
@@ -216,22 +241,27 @@ export class CANService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`CAN setup failed: ${response.statusText}. ${errorData.message || ''}`);
+        throw new Error(
+          `CAN setup failed: ${response.statusText}. ${errorData.message || ""}`,
+        );
       }
-      
+
       const result = await response.json();
-      console.log('CAN interface setup successful:', result.message);
+      console.log("CAN interface setup successful:", result.message);
     } catch (error) {
       // If API fails, try to connect anyway (interface might already be up)
-      console.warn('CAN setup API not available, trying direct connection:', error);
+      console.warn(
+        "CAN setup API not available, trying direct connection:",
+        error,
+      );
     }
   }
 
   private setupMessageHandling(): void {
     if (!this.socketcanWorker) return;
 
-    this.socketcanWorker.addEventListener('message', (event) => {
-      if (event.data.type === 'message') {
+    this.socketcanWorker.addEventListener("message", (event) => {
+      if (event.data.type === "message") {
         const canMessage: CANMessage = {
           id: event.data.message.id,
           data: new Uint8Array(event.data.message.data),
@@ -239,22 +269,29 @@ export class CANService {
         };
 
         // Notify all listeners
-        this.messageListeners.forEach(listener => {
+        this.messageListeners.forEach((listener) => {
           try {
             listener(canMessage);
           } catch (error) {
-            console.error('Error in message listener:', error);
+            console.error("Error in message listener:", error);
           }
         });
       }
     });
   }
 
-  private async waitForMessage(expectedId: number, timeoutMs: number): Promise<CANMessage> {
+  private async waitForMessage(
+    expectedId: number,
+    timeoutMs: number,
+  ): Promise<CANMessage> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.removeMessageListener(messageListener);
-        reject(new HellaProgError(`Timeout waiting for CAN message ID ${expectedId.toString(16)}`));
+        reject(
+          new HellaProgError(
+            `Timeout waiting for CAN message ID ${expectedId.toString(16)}`,
+          ),
+        );
       }, timeoutMs);
 
       const messageListener = (message: CANMessage) => {
@@ -285,11 +322,11 @@ export function validateCANInterface(canInterface: CANInterface): boolean {
     return false;
   }
 
-  if (canInterface.type === 'socketcan') {
+  if (canInterface.type === "socketcan") {
     return /^can\d+$/.test(canInterface.channel);
   }
 
-  if (canInterface.type === 'slcan') {
+  if (canInterface.type === "slcan") {
     return /^\/dev\/tty(USB|ACM)\d+$/.test(canInterface.channel);
   }
 

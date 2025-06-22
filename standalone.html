@@ -1,81 +1,107 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hella Turbo Controller</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.5.1/dist/vuetify.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet">
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/vuetify@3.5.1/dist/vuetify.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
     <div id="app">
-        <v-app>
-            <v-app-bar color="primary" dark>
-                <v-app-bar-title>
+      <v-app>
+        <v-app-bar color="primary" dark>
+          <v-app-bar-title>
+            <v-icon class="mr-2">mdi-car-turbocharger</v-icon>
+            Hella Turbo Controller
+          </v-app-bar-title>
+        </v-app-bar>
+
+        <v-main>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-card>
+                  <v-card-title>
                     <v-icon class="mr-2">mdi-car-turbocharger</v-icon>
-                    Hella Turbo Controller
-                </v-app-bar-title>
-            </v-app-bar>
+                    Welcome to Hella Turbo Controller
+                  </v-card-title>
+                  <v-card-text>
+                    <v-alert type="info" class="mb-4">
+                      <strong>🎉 New TypeScript Version!</strong>
+                      This is the modern, cross-platform version built with
+                      Electron + Vue + Vuetify.
+                    </v-alert>
 
-            <v-main>
-                <v-container>
-                    <v-row>
-                        <v-col cols="12">
-                            <v-card>
-                                <v-card-title>
-                                    <v-icon class="mr-2">mdi-car-turbocharger</v-icon>
-                                    Welcome to Hella Turbo Controller
-                                </v-card-title>
-                                <v-card-text>
-                                    <v-alert type="info" class="mb-4">
-                                        <strong>🎉 New TypeScript Version!</strong>
-                                        This is the modern, cross-platform version built with Electron + Vue + Vuetify.
-                                    </v-alert>
-                                    
-                                    <p class="text-h6 mb-3">🔧 What's New:</p>
-                                    <v-list>
-                                        <v-list-item prepend-icon="mdi-check-circle" title="Cross-platform GUI (Windows, Mac, Linux)" />
-                                        <v-list-item prepend-icon="mdi-check-circle" title="TypeScript for better safety and development" />
-                                        <v-list-item prepend-icon="mdi-check-circle" title="Modern Vue 3 + Vuetify Material Design" />
-                                        <v-list-item prepend-icon="mdi-check-circle" title="Enhanced memory visualization" />
-                                        <v-list-item prepend-icon="mdi-check-circle" title="Real-time CAN monitoring" />
-                                    </v-list>
+                    <p class="text-h6 mb-3">🔧 What's New:</p>
+                    <v-list>
+                      <v-list-item
+                        prepend-icon="mdi-check-circle"
+                        title="Cross-platform GUI (Windows, Mac, Linux)"
+                      />
+                      <v-list-item
+                        prepend-icon="mdi-check-circle"
+                        title="TypeScript for better safety and development"
+                      />
+                      <v-list-item
+                        prepend-icon="mdi-check-circle"
+                        title="Modern Vue 3 + Vuetify Material Design"
+                      />
+                      <v-list-item
+                        prepend-icon="mdi-check-circle"
+                        title="Enhanced memory visualization"
+                      />
+                      <v-list-item
+                        prepend-icon="mdi-check-circle"
+                        title="Real-time CAN monitoring"
+                      />
+                    </v-list>
 
-                                    <v-alert type="warning" class="mt-4">
-                                        <strong>⚠️ Safety First!</strong>
-                                        This tool can permanently damage actuators if used incorrectly. 
-                                        Always backup memory dumps and understand the analysis before making changes.
-                                    </v-alert>
+                    <v-alert type="warning" class="mt-4">
+                      <strong>⚠️ Safety First!</strong>
+                      This tool can permanently damage actuators if used
+                      incorrectly. Always backup memory dumps and understand the
+                      analysis before making changes.
+                    </v-alert>
 
-                                    <v-alert type="success" class="mt-4">
-                                        <strong>✅ Application Loaded Successfully!</strong>
-                                        The TypeScript/Vue version is working. To use with actual hardware, 
-                                        you'll need to set up the development server or use the Python version in legacy-python/.
-                                    </v-alert>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                </v-container>
-            </v-main>
-        </v-app>
+                    <v-alert type="success" class="mt-4">
+                      <strong>✅ Application Loaded Successfully!</strong>
+                      The TypeScript/Vue version is working. To use with actual
+                      hardware, you'll need to set up the development server or
+                      use the Python version in legacy-python/.
+                    </v-alert>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-main>
+      </v-app>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vuetify@3.5.1/dist/vuetify.min.js"></script>
     <script>
-        const { createApp } = Vue;
-        const { createVuetify } = Vuetify;
+      const { createApp } = Vue;
+      const { createVuetify } = Vuetify;
 
-        const vuetify = createVuetify();
+      const vuetify = createVuetify();
 
-        createApp({
-            data() {
-                return {
-                    message: 'Hello Hella Turbo Controller!'
-                }
-            }
-        }).use(vuetify).mount('#app');
+      createApp({
+        data() {
+          return {
+            message: "Hello Hella Turbo Controller!",
+          };
+        },
+      })
+        .use(vuetify)
+        .mount("#app");
     </script>
-</body>
+  </body>
 </html>

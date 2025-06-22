@@ -7,12 +7,14 @@ Programming tool for the [Hella Universal turbo actuator I](https://www.hella.co
 This turbo actuator is used on many vehicles, especially to control VTG turbos. Two main interfaces to the ECU are used: the CAN bus or the PWM interface. The actuators are actually all the same and can be configured to work in either mode. Especially in PWM mode, the range and sensitivity can be configured.
 
 This repository provides both:
+
 - **🎯 Interactive Menu System**: User-friendly interface for easy operation
 - **🔧 Python Library**: Programmatic access for automation and scripting
 
 ## ⚡ Quick Start
 
 ### Option 1: Automatic Setup (Recommended)
+
 ```bash
 # The launcher handles dependencies automatically
 ./run_menu.sh
@@ -21,6 +23,7 @@ This repository provides both:
 ### Option 2: Manual Setup
 
 **For newer Ubuntu/Debian systems (recommended):**
+
 ```bash
 # Create a virtual environment
 python3 -m venv .venv
@@ -34,6 +37,7 @@ python3 hella_menu.py
 ```
 
 **For older systems or if you prefer system-wide install:**
+
 ```bash
 # Install dependencies system-wide
 pip install -r requirements.txt
@@ -47,42 +51,48 @@ That's it! The menu will guide you through interface selection, connection testi
 ## 🎮 Using the Interactive Menu
 
 ### Interface Selection
+
 The menu automatically detects available interfaces:
 
-| Interface Type | Best For | Example |
-|---------------|----------|---------|
-| **SocketCAN** | Linux with built-in CAN | Raspberry Pi, embedded systems |
-| **SLCAN** | USB-to-CAN adapters | Windows, Mac, Linux with USB adapter |
-| **Virtual CAN** | Testing without hardware | Development and testing |
+| Interface Type  | Best For                 | Example                              |
+| --------------- | ------------------------ | ------------------------------------ |
+| **SocketCAN**   | Linux with built-in CAN  | Raspberry Pi, embedded systems       |
+| **SLCAN**       | USB-to-CAN adapters      | Windows, Mac, Linux with USB adapter |
+| **Virtual CAN** | Testing without hardware | Development and testing              |
 
 ### Main Operations
 
 #### 📁 Read Memory Dump
+
 - Downloads complete actuator memory (128 bytes)
 - Saves to timestamped or custom filename
 - Use this to backup current settings before changes
 
 #### 📍 Read Current Positions
+
 - Shows min/max position settings
 - Displays values in hex, decimal, and percentage
 - Safe operation - no hardware movement
 
 #### ⚙️ Set Positions
+
 - **Input formats**: Decimal (`1234`) or hex (`0x04D2`)
 - **Range**: 0 to 65535 (0x0000 to 0xFFFF)
 - **Validation**: Prevents invalid values
 - **Safety**: Confirmation required before writing
 
 #### 🎯 Auto-Calibrate End Positions
+
 - ⚠️ **WARNING**: Moves actuator to physical limits!
 - Automatically finds min/max positions
 - Only use when actuator is safe to move
 - Results displayed in detailed table
 
 #### 📊 View Memory Dump
+
 - **Intelligent analysis** of all 128 memory bytes
 - **Position extraction** from addresses 0x03-0x06
-- **CAN ID detection** and configuration analysis  
+- **CAN ID detection** and configuration analysis
 - **Actuator type identification** (G-221, G-22, G-222 variants)
 - **Control mode detection** (CAN vs PWM)
 - **Safety warnings** for dangerous memory locations
@@ -90,6 +100,7 @@ The menu automatically detects available interfaces:
 - **Complete documentation** in [MEMORY_LAYOUT.md](MEMORY_LAYOUT.md)
 
 #### ✏️ Write Memory Byte
+
 - ⚠️ **ADVANCED USERS ONLY**: Modify individual memory bytes
 - **Safety validation**: Automatic backup requirement
 - **Dangerous address warnings** for critical configuration bytes
@@ -98,6 +109,7 @@ The menu automatically detects available interfaces:
 - **Protocol compliance**: Uses proper actuator write sequence
 
 ### Navigation
+
 - **Arrow keys**: Navigate menu options
 - **Enter**: Select option
 - **Ctrl+C**: Cancel current operation or exit
@@ -106,6 +118,7 @@ The menu automatically detects available interfaces:
 ## 🔧 Hardware Setup
 
 ### SocketCAN (Linux)
+
 ```bash
 # Setup CAN interface
 sudo ip link set can0 type can bitrate 500000
@@ -115,11 +128,13 @@ sudo ip link set up can0
 ```
 
 ### SLCAN (USB-to-CAN Adapter)
+
 1. Connect your USB-to-CAN adapter
 2. Select "SLCAN" in menu
 3. Choose detected device (usually `/dev/ttyUSB0` or `/dev/ttyACM0`)
 
 ### Virtual CAN (Testing)
+
 ```bash
 # Create virtual CAN interface for testing
 sudo modprobe vcan
@@ -141,19 +156,19 @@ with HellaProg('can0', 'socketcan') as hp:
     # Read memory dump
     filename = hp.readmemory("backup.bin")
     print(f"Memory saved to: {filename}")
-    
+
     # Read current positions
     min_pos = hp.readmin()
     max_pos = hp.readmax()
     print(f"Current range: {min_pos:04X} - {max_pos:04X}")
-    
+
     # Set new positions (with validation)
     hp.set_min(0x0113)
     hp.set_max(0x0220)
-    
+
     # Write single memory byte (ADVANCED - be very careful!)
     # hp.write_memory_byte(0x41, 0x50)  # Enable CAN control
-    
+
     # Auto-calibrate (be careful!)
     # min_pos, max_pos = hp.find_end_positions()
 ```
@@ -169,6 +184,7 @@ with HellaProg('can0', 'socketcan') as hp:
 ### Common Issues
 
 **"externally-managed-environment" error**
+
 ```bash
 # Modern Ubuntu/Debian systems protect the system Python
 # Solution 1: Use virtual environment (recommended)
@@ -184,20 +200,24 @@ sudo apt install python3-venv python3-pip
 ```
 
 **"No CAN interfaces detected"**
+
 - Check if CAN hardware is connected
 - Verify interface is configured (for SocketCAN)
 - Try manual configuration option
 
 **"Permission denied"**
+
 - USB devices: Check user permissions or use sudo
 - SocketCAN: May need sudo for interface setup
 
 **"Connection failed"**
+
 - Verify correct interface type selected
 - Check device paths (USB devices may change)
 - Ensure actuator is powered and connected
 
 **"No acknowledgment received"**
+
 - Check CAN bus termination
 - Verify bitrate (should be 500kbps)
 - Ensure actuator is responsive

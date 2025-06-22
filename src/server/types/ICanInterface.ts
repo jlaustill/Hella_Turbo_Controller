@@ -1,5 +1,5 @@
 interface ICanInterface {
-  type: 'socketcan' | 'slcan';
+  type: "socketcan" | "slcan";
   channel: string;
   bitrate?: number;
 }

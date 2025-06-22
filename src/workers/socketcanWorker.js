@@ -6,7 +6,6 @@
 let canSocket = null;
 let isConnected = false;
 
-
 // WebSocket-based CAN implementation for browser
 class WebSocketCANSocket {
   constructor(channel) {
@@ -24,7 +23,9 @@ class WebSocketCANSocket {
         this.websocket = new WebSocket(wsUrl);
 
         this.websocket.onopen = () => {
-          console.log(`Connected to CAN interface via WebSocket: ${this.channel}`);
+          console.log(
+            `Connected to CAN interface via WebSocket: ${this.channel}`,
+          );
           this.isConnected = true;
           resolve();
         };
@@ -32,37 +33,44 @@ class WebSocketCANSocket {
         this.websocket.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
-            if (message.type === 'can_message') {
-              this.messageListeners.forEach(listener => listener({
-                id: message.id,
-                data: message.data,
-                timestamp: message.timestamp || Date.now()
-              }));
+            if (message.type === "can_message") {
+              this.messageListeners.forEach((listener) =>
+                listener({
+                  id: message.id,
+                  data: message.data,
+                  timestamp: message.timestamp || Date.now(),
+                }),
+              );
             }
           } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            console.error("Error parsing WebSocket message:", error);
           }
         };
 
         this.websocket.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          reject(new Error(`WebSocket connection failed: ${error.message || 'Unknown error'}`));
+          console.error("WebSocket error:", error);
+          reject(
+            new Error(
+              `WebSocket connection failed: ${error.message || "Unknown error"}`,
+            ),
+          );
         };
 
         this.websocket.onclose = () => {
-          console.log('WebSocket connection closed');
+          console.log("WebSocket connection closed");
           this.isConnected = false;
         };
 
         // Timeout for connection
         setTimeout(() => {
           if (!this.isConnected) {
-            reject(new Error('WebSocket connection timeout'));
+            reject(new Error("WebSocket connection timeout"));
           }
         }, 5000);
-
       } catch (error) {
-        reject(new Error(`Failed to connect to WebSocket CAN: ${error.message}`));
+        reject(
+          new Error(`Failed to connect to WebSocket CAN: ${error.message}`),
+        );
       }
     });
   }
@@ -77,13 +85,13 @@ class WebSocketCANSocket {
 
   send(message) {
     if (!this.websocket || !this.isConnected) {
-      throw new Error('WebSocket not connected');
+      throw new Error("WebSocket not connected");
     }
 
     const wsMessage = {
-      type: 'send_can_message',
+      type: "send_can_message",
       id: message.id,
-      data: message.data
+      data: message.data,
     };
 
     this.websocket.send(JSON.stringify(wsMessage));
@@ -102,30 +110,30 @@ class WebSocketCANSocket {
 }
 
 // Worker message handlers
-self.addEventListener('message', async (event) => {
+self.addEventListener("message", async (event) => {
   const { type, channel, message } = event.data;
 
   try {
     switch (type) {
-      case 'connect':
+      case "connect":
         await connectToCAN(channel);
         break;
-        
-      case 'disconnect':
+
+      case "disconnect":
         disconnectFromCAN();
         break;
-        
-      case 'send':
+
+      case "send":
         sendCANMessage(message);
         break;
-        
+
       default:
-        console.warn('Unknown message type:', type);
+        console.warn("Unknown message type:", type);
     }
   } catch (error) {
     self.postMessage({
-      type: 'error',
-      message: error.message
+      type: "error",
+      message: error.message,
     });
   }
 });
@@ -134,26 +142,25 @@ async function connectToCAN(channel) {
   try {
     canSocket = new WebSocketCANSocket(channel);
     await canSocket.connect();
-    console.log('Connected to CAN interface via WebSocket');
+    console.log("Connected to CAN interface via WebSocket");
 
     // Set up message forwarding to main thread
     canSocket.addMessageListener((message) => {
       self.postMessage({
-        type: 'message',
-        message: message
+        type: "message",
+        message: message,
       });
     });
 
     isConnected = true;
     self.postMessage({
-      type: 'connected',
-      channel: channel
+      type: "connected",
+      channel: channel,
     });
-
   } catch (error) {
     self.postMessage({
-      type: 'error',
-      message: `Failed to connect to CAN: ${error.message}`
+      type: "error",
+      message: `Failed to connect to CAN: ${error.message}`,
     });
   }
 }
@@ -164,24 +171,24 @@ function disconnectFromCAN() {
     canSocket = null;
   }
   isConnected = false;
-  
+
   self.postMessage({
-    type: 'disconnected'
+    type: "disconnected",
   });
 }
 
 function sendCANMessage(message) {
   if (!canSocket || !isConnected) {
-    throw new Error('CAN socket not connected');
+    throw new Error("CAN socket not connected");
   }
 
   canSocket.send({
     id: message.id,
-    data: message.data
+    data: message.data,
   });
 }
 
 // Handle worker termination
-self.addEventListener('beforeunload', () => {
+self.addEventListener("beforeunload", () => {
   disconnectFromCAN();
 });

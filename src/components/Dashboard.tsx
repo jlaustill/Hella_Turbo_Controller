@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Typography,
   Paper,
@@ -13,10 +13,10 @@ import {
   Stepper,
   Step,
   StepLabel,
-} from '@mui/material';
-import { CheckCircle, Folder, Warning } from '@mui/icons-material';
+} from "@mui/material";
+import { CheckCircle, Folder, Warning } from "@mui/icons-material";
 
-const steps = ['Connect CAN', 'Configure Actuator', 'Read Memory', 'Analyze'];
+const steps = ["Connect CAN", "Configure Actuator", "Read Memory", "Analyze"];
 
 function Dashboard() {
   return (
@@ -29,7 +29,7 @@ function Dashboard() {
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
             <Alert severity="info" sx={{ mb: 3 }}>
-              <strong>🎉 New TypeScript Version!</strong> This is the modern, 
+              <strong>🎉 New TypeScript Version!</strong> This is the modern,
               cross-platform version built with Electron + React + Material-UI.
             </Alert>
 
@@ -38,32 +38,42 @@ function Dashboard() {
             </Typography>
             <List>
               <ListItem>
-                <ListItemIcon><CheckCircle color="primary" /></ListItemIcon>
+                <ListItemIcon>
+                  <CheckCircle color="primary" />
+                </ListItemIcon>
                 <ListItemText primary="Cross-platform GUI (Windows, Mac, Linux)" />
               </ListItem>
               <ListItem>
-                <ListItemIcon><CheckCircle color="primary" /></ListItemIcon>
+                <ListItemIcon>
+                  <CheckCircle color="primary" />
+                </ListItemIcon>
                 <ListItemText primary="TypeScript for better safety and development" />
               </ListItem>
               <ListItem>
-                <ListItemIcon><CheckCircle color="primary" /></ListItemIcon>
+                <ListItemIcon>
+                  <CheckCircle color="primary" />
+                </ListItemIcon>
                 <ListItemText primary="Modern React + Material-UI Design" />
               </ListItem>
               <ListItem>
-                <ListItemIcon><CheckCircle color="primary" /></ListItemIcon>
+                <ListItemIcon>
+                  <CheckCircle color="primary" />
+                </ListItemIcon>
                 <ListItemText primary="Enhanced memory visualization" />
               </ListItem>
               <ListItem>
-                <ListItemIcon><CheckCircle color="primary" /></ListItemIcon>
+                <ListItemIcon>
+                  <CheckCircle color="primary" />
+                </ListItemIcon>
                 <ListItemText primary="Real-time CAN monitoring" />
               </ListItem>
             </List>
 
             <Alert severity="warning" sx={{ mt: 3 }}>
               <Warning sx={{ mr: 1 }} />
-              <strong>Safety First!</strong> This tool can permanently damage actuators 
-              if used incorrectly. Always backup memory dumps and understand the analysis 
-              before making changes.
+              <strong>Safety First!</strong> This tool can permanently damage
+              actuators if used incorrectly. Always backup memory dumps and
+              understand the analysis before making changes.
             </Alert>
           </Paper>
         </Grid>
@@ -74,7 +84,7 @@ function Dashboard() {
               Quick Start
             </Typography>
             <Stepper orientation="vertical" activeStep={0}>
-              {steps.map((label, index) => (
+              {steps.map((label) => (
                 <Step key={label}>
                   <StepLabel>{label}</StepLabel>
                 </Step>
@@ -89,7 +99,7 @@ function Dashboard() {
               Legacy Python Version
             </Typography>
             <Typography variant="body1" paragraph>
-              The original Python CLI tools are available in the{' '}
+              The original Python CLI tools are available in the{" "}
               <code>legacy-python/</code> folder.
             </Typography>
             <Button variant="outlined" startIcon={<Folder />}>

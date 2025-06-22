@@ -1,9 +1,9 @@
 // Import socketcan library
 import * as socketcan from "socketcan";
-import { spawn } from 'child_process';
-import ICanMessage from '../types/ICanMessage';
-import ICanInterface from '../types/ICanInterface';
-import ISocketCanChannel from './types/ISocketCanChannel';
+import { spawn } from "child_process";
+import ICanMessage from "../types/ICanMessage";
+import ICanInterface from "../types/ICanInterface";
+import ISocketCanChannel from "./types/ISocketCanChannel";
 
 class CanBus {
   private socket: ISocketCanChannel | null = null;
@@ -11,25 +11,30 @@ class CanBus {
 
   async connect(canInterface: ICanInterface): Promise<void> {
     // Setup CAN interface first
-    await this.setupCANInterface(canInterface.channel, canInterface.bitrate || 500000);
-    
+    await this.setupCANInterface(
+      canInterface.channel,
+      canInterface.bitrate || 500000,
+    );
+
     // Create socketcan channel
     this.socket = socketcan.createRawChannel(canInterface.channel, true);
-    
+
     // Setup message forwarding
-    this.socket.addListener('onMessage', (msg) => {
+    this.socket.addListener("onMessage", (msg) => {
       const message: ICanMessage = {
         id: msg.id,
         data: msg.data,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      
-      this.messageListeners.forEach(listener => listener(message));
+
+      this.messageListeners.forEach((listener) => listener(message));
     });
-    
+
     // Start the channel
     this.socket.start();
-    console.log(`📡 Real CAN socket started for ${canInterface.channel} using socketcan library`);
+    console.log(
+      `📡 Real CAN socket started for ${canInterface.channel} using socketcan library`,
+    );
   }
 
   async disconnect(): Promise<void> {
@@ -42,14 +47,14 @@ class CanBus {
 
   async send(message: ICanMessage): Promise<void> {
     if (!this.socket) {
-      throw new Error('CAN interface not connected');
+      throw new Error("CAN interface not connected");
     }
 
     const canMessage = {
       id: message.id,
       ext: message.extended || false,
       rtr: message.remote || false,
-      data: message.data
+      data: message.data,
     };
 
     this.socket.send(canMessage);
@@ -66,28 +71,33 @@ class CanBus {
     }
   }
 
-  private async setupCANInterface(channel: string, bitrate: number): Promise<void> {
+  private async setupCANInterface(
+    channel: string,
+    bitrate: number,
+  ): Promise<void> {
     const commands = [
       `sudo ip link set ${channel} down`,
       `sudo ip link set ${channel} type can bitrate ${bitrate}`,
-      `sudo ip link set ${channel} up`
+      `sudo ip link set ${channel} up`,
     ];
 
     for (const command of commands) {
       try {
         await this.executeCommand(command);
       } catch (error) {
-        console.warn(`CAN setup command failed: ${command}. Interface may already be configured.`);
+        console.warn(
+          `CAN setup command failed: ${command}. Interface may already be configured.`,
+        );
       }
     }
   }
 
   private executeCommand(command: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const [cmd, ...args] = command.split(' ');
+      const [cmd, ...args] = command.split(" ");
       const process = spawn(cmd, args);
 
-      process.on('close', (code) => {
+      process.on("close", (code) => {
         if (code === 0) {
           resolve();
         } else {
@@ -95,7 +105,7 @@ class CanBus {
         }
       });
 
-      process.on('error', (error) => {
+      process.on("error", (error) => {
         reject(error);
       });
     });

@@ -1,4 +1,4 @@
-import ICanMessage from '../../types/ICanMessage';
+import ICanMessage from "../../types/ICanMessage";
 
 type TMessageHandler = (message: ICanMessage) => void;
 

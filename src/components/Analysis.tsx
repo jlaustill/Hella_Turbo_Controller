@@ -1,5 +1,5 @@
-import React from 'react';
-import { Typography, Paper, Box } from '@mui/material';
+import React from "react";
+import { Typography, Paper, Box } from "@mui/material";
 
 function Analysis() {
   return (

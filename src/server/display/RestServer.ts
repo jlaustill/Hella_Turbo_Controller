@@ -1,9 +1,9 @@
-import express from 'express';
-import cors from 'cors';
-import { createServer, Server } from 'http';
-import CanService from '../domain/CanService';
-import ICanInterface from '../types/ICanInterface';
-import IHttpRequest from './types/IHttpRequest';
+import express from "express";
+import cors from "cors";
+import { createServer, Server } from "http";
+import CanService from "../domain/CanService";
+import ICanInterface from "../types/ICanInterface";
+import IHttpRequest from "./types/IHttpRequest";
 
 class RestServer {
   private app: express.Application;
@@ -47,38 +47,39 @@ class RestServer {
 
   private setupRoutes(): void {
     // Health check
-    this.app.get('/api/health', (req, res) => {
+    this.app.get("/api/health", (req, res) => {
       res.json({
         success: true,
-        message: 'CAN API server is running',
+        message: "CAN API server is running",
         timestamp: new Date().toISOString(),
-        status: this.canService.getStatus()
+        status: this.canService.getStatus(),
       });
     });
 
     // CAN interface setup
-    this.app.post('/api/can-setup', async (req, res) => {
+    this.app.post("/api/can-setup", async (req, res) => {
       try {
         const { channel, bitrate = 500000 }: IHttpRequest = req.body;
 
         if (!channel) {
           return res.status(400).json({
             success: false,
-            message: 'Channel is required'
+            message: "Channel is required",
           });
         }
 
         if (!/^can\d+$/.test(channel)) {
           return res.status(400).json({
             success: false,
-            message: 'Invalid channel format. Expected format: can0, can1, etc.'
+            message:
+              "Invalid channel format. Expected format: can0, can1, etc.",
           });
         }
 
         const canInterface: ICanInterface = {
-          type: 'socketcan',
+          type: "socketcan",
           channel,
-          bitrate
+          bitrate,
         };
 
         await this.canService.connect(canInterface);
@@ -87,23 +88,22 @@ class RestServer {
           success: true,
           message: `CAN interface ${channel} setup successfully`,
           channel,
-          bitrate
+          bitrate,
         });
-
       } catch (error: any) {
-        console.error('CAN setup error:', error);
+        console.error("CAN setup error:", error);
         res.status(500).json({
           success: false,
-          message: `CAN setup failed: ${error.message}`
+          message: `CAN setup failed: ${error.message}`,
         });
       }
     });
 
     // Get CAN status
-    this.app.get('/api/can-status', (req, res) => {
+    this.app.get("/api/can-status", (req, res) => {
       res.json({
         success: true,
-        status: this.canService.getStatus()
+        status: this.canService.getStatus(),
       });
     });
   }

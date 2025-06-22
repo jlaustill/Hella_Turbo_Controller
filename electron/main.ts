@@ -1,8 +1,8 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import * as path from 'path';
+import { app, BrowserWindow, ipcMain } from "electron";
+import * as path from "path";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
@@ -16,23 +16,23 @@ const createWindow = (): void => {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
     },
-    icon: path.join(__dirname, '../assets/icon.png'),
-    title: 'Hella Turbo Controller',
+    icon: path.join(__dirname, "../assets/icon.png"),
+    title: "Hella Turbo Controller",
     show: false, // Don't show until ready
   });
 
   // and load the index.html of the app.
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3000');
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }
 
   // Show window when ready to prevent visual flash
-  mainWindow.once('ready-to-show', () => {
+  mainWindow.once("ready-to-show", () => {
     mainWindow.show();
   });
 };
@@ -40,10 +40,10 @@ const createWindow = (): void => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', () => {
+app.on("ready", () => {
   createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -53,28 +53,28 @@ app.on('ready', () => {
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
 // Handle IPC messages for CAN communication
-ipcMain.handle('can-connect', async (event, canInterface) => {
+ipcMain.handle("can-connect", async (event, canInterface) => {
   // TODO: Implement CAN connection
-  console.log('CAN connect requested:', canInterface);
+  console.log("CAN connect requested:", canInterface);
   return { success: true };
 });
 
-ipcMain.handle('can-disconnect', async () => {
+ipcMain.handle("can-disconnect", async () => {
   // TODO: Implement CAN disconnection
-  console.log('CAN disconnect requested');
+  console.log("CAN disconnect requested");
   return { success: true };
 });
 
-ipcMain.handle('can-send-message', async (event, id, data) => {
+ipcMain.handle("can-send-message", async (event, id, data) => {
   // TODO: Implement CAN message sending
-  console.log('CAN message send requested:', { id, data });
+  console.log("CAN message send requested:", { id, data });
   return { success: true };
 });
 

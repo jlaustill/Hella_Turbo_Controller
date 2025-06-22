@@ -9,6 +9,7 @@ This repository contains a Python application for programming the Hella Universa
 ## Dependencies
 
 Install dependencies with:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -32,7 +33,7 @@ The main class `HellaProg` in `hella_prog.py` handles all communication with the
 
 - 0x3F0: Request messages to actuator
 - 0x3E8: Memory read responses
-- 0x3EA: Position status responses  
+- 0x3EA: Position status responses
 - 0x3EB: Acknowledgment responses
 
 ## Interactive Menu System (Recommended)
@@ -62,14 +63,15 @@ python3 hella_menu.py
 
 The menu system supports automatic CAN interface management:
 
-| Interface Type | Description | Auto-Setup | Example |
-|---------------|-------------|------------|---------|
-| **SocketCAN** | Linux built-in CAN | ✅ Yes (with sudo) | can0, can1 |
-| **SLCAN** | USB-to-CAN adapters | ⚠️ Manual | /dev/ttyUSB0, /dev/ttyACM0 |
-| **Virtual CAN** | Testing with virtual interfaces | ✅ Yes (with sudo) | vcan0 |
-| **Custom** | Manual configuration | ❌ No | Any valid channel |
+| Interface Type  | Description                     | Auto-Setup         | Example                    |
+| --------------- | ------------------------------- | ------------------ | -------------------------- |
+| **SocketCAN**   | Linux built-in CAN              | ✅ Yes (with sudo) | can0, can1                 |
+| **SLCAN**       | USB-to-CAN adapters             | ⚠️ Manual          | /dev/ttyUSB0, /dev/ttyACM0 |
+| **Virtual CAN** | Testing with virtual interfaces | ✅ Yes (with sudo) | vcan0                      |
+| **Custom**      | Manual configuration            | ❌ No              | Any valid channel          |
 
 **Automatic Setup Features:**
+
 - 🔍 **Auto-detection** of available CAN interfaces
 - 📊 **Status checking** (UP/DOWN, bitrate verification)
 - 🔧 **Automatic configuration** with sudo password prompt
@@ -86,15 +88,15 @@ from hella_prog import HellaProg
 with HellaProg('can0', 'socketcan') as hp:
     # Read memory dump
     filename = hp.readmemory()
-    
+
     # Read current positions
     min_pos = hp.readmin()
     max_pos = hp.readmax()
-    
+
     # Set new positions
     hp.set_min(0x0113)
     hp.set_max(0x0220)
-    
+
     # Automatic calibration
     min_pos, max_pos = hp.find_end_positions()
 ```
@@ -119,6 +121,7 @@ python3 -c "from hella_prog import HellaProg; print('Import successful')"
 ### Code Modification Best Practices
 
 **ALWAYS check for existing methods before creating new ones:**
+
 - Use `grep` or code search to find existing functionality
 - Check method names with similar patterns (e.g., `readCurrentPosition` vs `read_current_position`)
 - Prefer modifying existing methods to return appropriate values rather than duplicating functionality
@@ -131,19 +134,22 @@ python3 -c "from hella_prog import HellaProg; print('Import successful')"
 **DANGER: Previous assumptions about CAN data format were WRONG and could brick actuators!**
 
 **Original (INCORRECT) assumptions:**
+
 - Position data in bytes 5-6 of CAN messages
 - Various hardcoded CAN IDs that may not match actual hardware
 
 **Verified G-222 format (from reverse engineering):**
-- **Position**: bytes 2-3 (big endian) - range 688 (0% open) to 212 (100% open)  
+
+- **Position**: bytes 2-3 (big endian) - range 688 (0% open) to 212 (100% open)
 - **Status**: byte 0
-- **Temperature**: byte 5  
+- **Temperature**: byte 5
 - **Motor Load**: bytes 6-7 (big endian)
 - **CAN ID**: 0x658 (for this specific actuator - varies by model)
 
 **Before making ANY memory modifications:**
+
 1. Verify the exact data format for YOUR specific actuator model
-2. Use candump to observe actual CAN traffic patterns  
+2. Use candump to observe actual CAN traffic patterns
 3. Cross-reference memory contents with observed behavior
 4. NEVER assume byte positions without verification
 
@@ -152,12 +158,14 @@ python3 -c "from hella_prog import HellaProg; print('Import successful')"
 **ALL commits to this repository MUST be GPG signed with ZERO exceptions.**
 
 This is a security-critical project dealing with hardware that can be permanently damaged. Commit signing ensures:
+
 - **Authenticity**: Verify commits come from trusted contributors
 - **Integrity**: Detect any tampering with commit history
 - **Accountability**: Clear trail of who made what changes
 - **Safety**: Critical for projects that can brick expensive hardware
 
 **Setup GPG signing:**
+
 ```bash
 # Generate GPG key if you don't have one
 gpg --full-generate-key
@@ -171,7 +179,8 @@ git commit -S -m "Test signed commit"
 ```
 
 **If commits fail with signing errors:**
-- ❌ **NEVER use `--no-gpg-sign`** 
+
+- ❌ **NEVER use `--no-gpg-sign`**
 - ✅ **Fix the GPG setup instead**
 - ✅ **Ask for help if needed**
 
@@ -182,6 +191,7 @@ This policy protects the community from potentially dangerous unsigned commits.
 **NEVER implement mock, simulated, or fake CAN traffic under ANY circumstances.**
 
 This is a hardware reverse engineering project working with real actuators. Mock data:
+
 - ❌ **Misleads developers** about actual hardware behavior
 - ❌ **Masks real connectivity issues** that need to be fixed
 - ❌ **Creates false confidence** in non-working systems
@@ -189,12 +199,14 @@ This is a hardware reverse engineering project working with real actuators. Mock
 - ❌ **Dangerous for hardware** - real actuators behave differently than simulations
 
 **When CAN traffic isn't working:**
+
 - ✅ **Show clear error messages** explaining the hardware requirement
 - ✅ **Provide troubleshooting steps** for real hardware setup
 - ✅ **Display connection status** (connected/disconnected/error)
 - ✅ **Guide users to fix the real problem** (hardware, drivers, permissions)
 
 **If you need to test without hardware:**
+
 - ✅ **Use real CAN hardware** with actual actuators
 - ✅ **Set up proper CAN interfaces** (can0, can1, etc.)
 - ✅ **Test with real vcan interfaces** if absolutely necessary for development
@@ -204,6 +216,7 @@ This is a hardware reverse engineering project working with real actuators. Mock
 ## Improvements Made
 
 ### Core Library (hella_prog.py)
+
 - Fixed critical runtime errors (typos, logic bugs)
 - Added comprehensive error handling and timeouts
 - Implemented proper input validation
@@ -214,6 +227,7 @@ This is a hardware reverse engineering project working with real actuators. Mock
 - Implemented proper logging instead of print statements
 
 ### Interactive Menu System (hella_menu.py)
+
 - **User-Friendly Interface**: Beautiful terminal menus with arrow key navigation
 - **Smart Hardware Detection**: Automatically finds available CAN interfaces and USB devices
 - **Connection Validation**: Tests hardware before proceeding with operations

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   ThemeProvider,
   createTheme,
@@ -12,8 +12,7 @@ import {
   Tabs,
   Tab,
   Drawer,
-  Grid,
-} from '@mui/material';
+} from "@mui/material";
 import {
   CarRepair,
   Dashboard,
@@ -22,53 +21,53 @@ import {
   Analytics,
   Brightness4,
   Brightness7,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
-import DashboardView from './components/Dashboard';
-import ActuatorManager from './components/ActuatorManager';
-import MemoryViewer from './components/MemoryViewer';
-import CANMonitor from './components/CANMonitor';
-import Analysis from './components/Analysis';
-import CANStatusSidebar from './components/CANStatusSidebar';
+import DashboardView from "./components/Dashboard";
+import ActuatorManager from "./components/ActuatorManager";
+import MemoryViewer from "./components/MemoryViewer";
+import CANMonitor from "./components/CANMonitor";
+import Analysis from "./components/Analysis";
+import CANStatusSidebar from "./components/CANStatusSidebar";
 
 const SIDEBAR_WIDTH = 280;
 
 const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: "light",
   },
 });
 
 const darkTheme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: "dark",
   },
 });
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: <Dashboard /> },
-  { id: 'actuator', label: 'Actuator Manager', icon: <CarRepair /> },
-  { id: 'memory', label: 'Memory Viewer', icon: <Memory /> },
-  { id: 'monitor', label: 'CAN Monitor', icon: <Monitor /> },
-  { id: 'analysis', label: 'Analysis', icon: <Analytics /> },
+  { id: "dashboard", label: "Dashboard", icon: <Dashboard /> },
+  { id: "actuator", label: "Actuator Manager", icon: <CarRepair /> },
+  { id: "memory", label: "Memory Viewer", icon: <Memory /> },
+  { id: "monitor", label: "CAN Monitor", icon: <Monitor /> },
+  { id: "analysis", label: "Analysis", icon: <Analytics /> },
 ];
 
 function App() {
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState("dashboard");
   const [darkMode, setDarkMode] = useState(false);
   const [canConnected, setCanConnected] = useState(false);
 
   const renderCurrentComponent = () => {
     switch (currentView) {
-      case 'dashboard':
+      case "dashboard":
         return <DashboardView />;
-      case 'actuator':
+      case "actuator":
         return <ActuatorManager canConnected={canConnected} />;
-      case 'memory':
+      case "memory":
         return <MemoryViewer />;
-      case 'monitor':
+      case "monitor":
         return <CANMonitor />;
-      case 'analysis':
+      case "analysis":
         return <Analysis />;
       default:
         return <DashboardView />;
@@ -82,19 +81,24 @@ function App() {
   return (
     <ThemeProvider theme={darkMode ? darkTheme : theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Box sx={{ display: "flex", height: "100vh" }}>
         {/* Top AppBar */}
         <AppBar
           position="fixed"
           sx={{
             width: `calc(100% - ${SIDEBAR_WIDTH}px)`,
             ml: `${SIDEBAR_WIDTH}px`,
-            zIndex: (theme) => theme.zIndex.drawer + 1,
+            zIndex: (themeZIndex) => themeZIndex.zIndex.drawer + 1,
           }}
         >
           <Toolbar>
             <CarRepair sx={{ mr: 2 }} />
-            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ flexGrow: 1 }}
+            >
               Hella Turbo Controller
             </Typography>
             <IconButton
@@ -106,7 +110,7 @@ function App() {
               {darkMode ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
           </Toolbar>
-          
+
           {/* Navigation Tabs */}
           <Tabs
             value={currentView}
@@ -115,16 +119,16 @@ function App() {
             scrollButtons="auto"
             sx={{
               borderBottom: 1,
-              borderColor: 'divider',
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              '& .MuiTab-root': {
-                color: 'rgba(255, 255, 255, 0.7)',
-                '&.Mui-selected': {
-                  color: 'white',
+              borderColor: "divider",
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              "& .MuiTab-root": {
+                color: "rgba(255, 255, 255, 0.7)",
+                "&.Mui-selected": {
+                  color: "white",
                 },
               },
-              '& .MuiTabs-indicator': {
-                backgroundColor: 'white',
+              "& .MuiTabs-indicator": {
+                backgroundColor: "white",
               },
             }}
           >
@@ -146,9 +150,9 @@ function App() {
           sx={{
             width: SIDEBAR_WIDTH,
             flexShrink: 0,
-            '& .MuiDrawer-paper': {
+            "& .MuiDrawer-paper": {
               width: SIDEBAR_WIDTH,
-              boxSizing: 'border-box',
+              boxSizing: "border-box",
               pt: 2,
               pb: 2,
               px: 2,
@@ -165,15 +169,13 @@ function App() {
           component="main"
           sx={{
             flexGrow: 1,
-            bgcolor: 'background.default',
+            bgcolor: "background.default",
             p: 3,
-            mt: '112px', // Account for AppBar + Tabs height
-            overflow: 'auto',
+            mt: "112px", // Account for AppBar + Tabs height
+            overflow: "auto",
           }}
         >
-          <Container maxWidth="xl">
-            {renderCurrentComponent()}
-          </Container>
+          <Container maxWidth="xl">{renderCurrentComponent()}</Container>
         </Box>
       </Box>
     </ThemeProvider>

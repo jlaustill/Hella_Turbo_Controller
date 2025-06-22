@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Paper,
@@ -10,9 +10,14 @@ import {
   Grid,
   Chip,
   Alert,
-} from '@mui/material';
-import { PlayArrow, Stop, Clear } from '@mui/icons-material';
-import { CANService, createCANService, type CANMessage as ServiceCANMessage, type CANInterface } from '../services/canService';
+} from "@mui/material";
+import { Clear } from "@mui/icons-material";
+import {
+  CANService,
+  createCANService,
+  type CANMessage as ServiceCANMessage,
+  type CANInterface,
+} from "../services/canService";
 
 interface CANMessage {
   id: string;
@@ -20,21 +25,21 @@ interface CANMessage {
   canId: string;
   data: string;
   interpretation?: string;
-  type: 'request' | 'response' | 'position' | 'error';
+  type: "request" | "response" | "position" | "error";
 }
 
 function CANMonitor() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [showTimestamps, setShowTimestamps] = useState(true);
   const [filterHella, setFilterHella] = useState(true);
-  const [maxMessages, setMaxMessages] = useState('1000');
+  const [maxMessages, setMaxMessages] = useState("1000");
   const [messages, setMessages] = useState<CANMessage[]>([]);
-  const [messageCount, setMessageCount] = useState(0);
+  const [, setMessageCount] = useState(0);
   const [messagesPerSecond, setMessagesPerSecond] = useState(0);
   const logRef = useRef<HTMLDivElement>(null);
   const canServiceRef = useRef<CANService | null>(null);
 
-  const hellaCANIds = ['0x3F0', '0x3E8', '0x3EA', '0x3EB'];
+  const hellaCANIds = ["0x3F0", "0x3E8", "0x3EA", "0x3EB"];
 
   // Initialize CAN service for monitoring (connection handled by sidebar)
   useEffect(() => {
@@ -42,30 +47,37 @@ function CANMonitor() {
       if (!canServiceRef.current) {
         // Use socketcan for real hardware
         const canInterface: CANInterface = {
-          type: 'socketcan',
-          channel: 'can0'
+          type: "socketcan",
+          channel: "can0",
         };
-        
+
         canServiceRef.current = createCANService(canInterface);
-        
+
         // Set up message listener
         const messageListener = (serviceMessage: ServiceCANMessage) => {
           const uiMessage: CANMessage = {
             id: Date.now().toString(),
             timestamp: serviceMessage.timestamp,
             canId: `0x${serviceMessage.id.toString(16).toUpperCase()}`,
-            data: Array.from(serviceMessage.data).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' '),
+            data: Array.from(serviceMessage.data)
+              .map((b) => b.toString(16).padStart(2, "0").toUpperCase())
+              .join(" "),
             type: getMessageType(serviceMessage.id),
-            interpretation: interpretMessage(`0x${serviceMessage.id.toString(16).toUpperCase()}`, Array.from(serviceMessage.data).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' '))
+            interpretation: interpretMessage(
+              `0x${serviceMessage.id.toString(16).toUpperCase()}`,
+              Array.from(serviceMessage.data)
+                .map((b) => b.toString(16).padStart(2, "0").toUpperCase())
+                .join(" "),
+            ),
           };
 
-          setMessages(prev => {
+          setMessages((prev) => {
             const updated = [uiMessage, ...prev];
-            const maxMsg = parseInt(maxMessages) || 1000;
+            const maxMsg = parseInt(maxMessages, 10) || 1000;
             return updated.slice(0, maxMsg);
           });
 
-          setMessageCount(prev => prev + 1);
+          setMessageCount((prev) => prev + 1);
         };
 
         canServiceRef.current.addMessageListener(messageListener);
@@ -92,67 +104,78 @@ function CANMonitor() {
   useEffect(() => {
     const interval = setInterval(() => {
       const oneSecondAgo = new Date(Date.now() - 1000);
-      const recentMessages = messages.filter(msg => msg.timestamp > oneSecondAgo);
+      const recentMessages = messages.filter(
+        (msg) => msg.timestamp > oneSecondAgo,
+      );
       setMessagesPerSecond(recentMessages.length);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [messages]);
 
-  const filteredMessages = filterHella 
-    ? messages.filter(msg => hellaCANIds.includes(msg.canId))
+  const filteredMessages = filterHella
+    ? messages.filter((msg) => hellaCANIds.includes(msg.canId))
     : messages;
 
-  const getMessageType = (canId: number): CANMessage['type'] => {
+  const getMessageType = (canId: number): CANMessage["type"] => {
     switch (canId) {
       case CANService.CAN_IDS.REQUEST:
-        return 'request';
+        return "request";
       case CANService.CAN_IDS.MEMORY_RESPONSE:
-        return 'response';
+        return "response";
       case CANService.CAN_IDS.POSITION_RESPONSE:
-        return 'position';
+        return "position";
       case CANService.CAN_IDS.ACK_RESPONSE:
-        return 'response';
+        return "response";
       default:
-        return 'response';
+        return "response";
     }
   };
 
   const interpretMessage = (canId: string, data: string): string => {
     switch (canId) {
-      case '0x3F0':
-        if (data.startsWith('22')) return 'Memory read request';
-        if (data.startsWith('2E')) return 'Memory write request';
-        return 'Request message';
-      case '0x3E8':
-        return 'Memory data response';
-      case '0x3EA':
-        const bytes = data.split(' ');
+      case "0x3F0":
+        if (data.startsWith("22")) return "Memory read request";
+        if (data.startsWith("2E")) return "Memory write request";
+        return "Request message";
+      case "0x3E8":
+        return "Memory data response";
+      case "0x3EA": {
+        const bytes = data.split(" ");
         if (bytes.length >= 4) {
-          const position = (parseInt(bytes[2], 16) << 8) | parseInt(bytes[3], 16);
+          const position =
+            (parseInt(bytes[2], 16) << 8) | parseInt(bytes[3], 16);
           return `Position: 0x${position.toString(16).toUpperCase()}`;
         }
-        return 'Position update';
-      case '0x3EB':
-        return 'Acknowledgment';
+        return "Position update";
+      }
+      case "0x3EB":
+        return "Acknowledgment";
       default:
-        return '';
+        return "";
     }
   };
 
-  const getMessageColor = (type: CANMessage['type']) => {
+  const getMessageColor = (type: CANMessage["type"]) => {
     switch (type) {
-      case 'request': return '#3b82f6';
-      case 'response': return '#10b981';
-      case 'position': return '#f59e0b';
-      case 'error': return '#ef4444';
-      default: return '#6b7280';
+      case "request":
+        return "#3b82f6";
+      case "response":
+        return "#10b981";
+      case "position":
+        return "#f59e0b";
+      case "error":
+        return "#ef4444";
+      default:
+        return "#6b7280";
     }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString() + '.' + timestamp.getMilliseconds().toString().padStart(3, '0');
-  };
+  const formatTimestamp = (timestamp: Date) =>
+    `${timestamp.toLocaleTimeString()}.${timestamp
+      .getMilliseconds()
+      .toString()
+      .padStart(3, "0")}`;
 
   const clearMessages = () => {
     setMessages([]);
@@ -166,7 +189,7 @@ function CANMonitor() {
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        <strong>Note:</strong> CAN connection is managed in the left sidebar. 
+        <strong>Note:</strong> CAN connection is managed in the left sidebar.
         This monitor displays real-time traffic when connected.
       </Alert>
 
@@ -176,19 +199,33 @@ function CANMonitor() {
             <Typography variant="h6" gutterBottom>
               Monitor Controls
             </Typography>
-            
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <FormControlLabel
-                control={<Switch checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />}
+                control={
+                  <Switch
+                    checked={autoScroll}
+                    onChange={(e) => setAutoScroll(e.target.checked)}
+                  />
+                }
                 label="Auto Scroll"
               />
               <FormControlLabel
-                control={<Switch checked={showTimestamps} onChange={(e) => setShowTimestamps(e.target.checked)} />}
+                control={
+                  <Switch
+                    checked={showTimestamps}
+                    onChange={(e) => setShowTimestamps(e.target.checked)}
+                  />
+                }
                 label="Show Timestamps"
               />
               <FormControlLabel
-                control={<Switch checked={filterHella} onChange={(e) => setFilterHella(e.target.checked)} />}
+                control={
+                  <Switch
+                    checked={filterHella}
+                    onChange={(e) => setFilterHella(e.target.checked)}
+                  />
+                }
                 label="Filter Hella Messages Only"
               />
               <TextField
@@ -211,25 +248,38 @@ function CANMonitor() {
 
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6">
-                Message Log
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Chip label={`${filteredMessages.length} messages`} color="primary" size="small" />
-                <Chip label={`${messagesPerSecond} msg/s`} color="secondary" size="small" />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
+              <Typography variant="h6">Message Log</Typography>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Chip
+                  label={`${filteredMessages.length} messages`}
+                  color="primary"
+                  size="small"
+                />
+                <Chip
+                  label={`${messagesPerSecond} msg/s`}
+                  color="secondary"
+                  size="small"
+                />
               </Box>
             </Box>
-            
+
             <Box
               ref={logRef}
               sx={{
                 height: 400,
-                overflow: 'auto',
-                fontFamily: 'monospace',
-                fontSize: '0.875rem',
-                backgroundColor: '#1e1e1e',
-                color: '#ffffff',
+                overflow: "auto",
+                fontFamily: "monospace",
+                fontSize: "0.875rem",
+                backgroundColor: "#1e1e1e",
+                color: "#ffffff",
                 p: 2,
                 borderRadius: 1,
               }}
@@ -238,25 +288,29 @@ function CANMonitor() {
                 <Box
                   key={message.id}
                   sx={{
-                    display: 'flex',
+                    display: "flex",
                     gap: 2,
                     py: 0.5,
-                    borderBottom: '1px solid #333',
+                    borderBottom: "1px solid #333",
                   }}
                 >
                   {showTimestamps && (
-                    <Box sx={{ color: '#888', minWidth: 120 }}>
+                    <Box sx={{ color: "#888", minWidth: 120 }}>
                       {formatTimestamp(message.timestamp)}
                     </Box>
                   )}
-                  <Box sx={{ color: getMessageColor(message.type), minWidth: 60, fontWeight: 'bold' }}>
+                  <Box
+                    sx={{
+                      color: getMessageColor(message.type),
+                      minWidth: 60,
+                      fontWeight: "bold",
+                    }}
+                  >
                     {message.canId}
                   </Box>
-                  <Box sx={{ minWidth: 200 }}>
-                    {message.data}
-                  </Box>
+                  <Box sx={{ minWidth: 200 }}>{message.data}</Box>
                   {message.interpretation && (
-                    <Box sx={{ color: '#aaa', fontStyle: 'italic' }}>
+                    <Box sx={{ color: "#aaa", fontStyle: "italic" }}>
                       {message.interpretation}
                     </Box>
                   )}
