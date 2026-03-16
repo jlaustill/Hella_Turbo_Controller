@@ -1,0 +1,102 @@
+{
+  "position": {
+    "0x00": {
+      "value": 0,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x08": {
+      "value": 8,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x10": {
+      "value": 16,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x18": {
+      "value": 24,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x20": {
+      "value": 32,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x28": {
+      "value": 40,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x30": {
+      "value": 48,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x40": {
+      "value": 64,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x50": {
+      "value": 80,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x60": {
+      "value": 96,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0x80": {
+      "value": 128,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0xA0": {
+      "value": 160,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0xC0": {
+      "value": 192,
+      "pre_pct": 99.1,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    },
+    "0xFF": {
+      "value": 255,
+      "pre_pct": 99.2,
+      "min_pct": -14.1,
+      "final_pct": -14.1,
+      "time_to_min": 0.0
+    }
+  }
+}

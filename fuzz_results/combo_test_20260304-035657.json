@@ -1,0 +1,112 @@
+{
+  "mode_only": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 2
+  },
+  "mode + commit": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 3
+  },
+  "mode + prepare + commit": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 4
+  },
+  "mode + motor_enable": {
+    "moved": true,
+    "delta": 113.3,
+    "cmds": 4
+  },
+  "mode + motor_enable + commit": {
+    "moved": true,
+    "delta": 113.2,
+    "cmds": 5
+  },
+  "mode + direction": {
+    "moved": true,
+    "delta": 108.8,
+    "cmds": 4
+  },
+  "mode + direction + commit": {
+    "moved": true,
+    "delta": 108.8,
+    "cmds": 5
+  },
+  "mode + motor + direction": {
+    "moved": true,
+    "delta": 113.3,
+    "cmds": 6
+  },
+  "mode + motor + direction + commit": {
+    "moved": true,
+    "delta": 113.3,
+    "cmds": 7
+  },
+  "mode + speed": {
+    "moved": false,
+    "delta": 0.1,
+    "cmds": 4
+  },
+  "mode + speed + commit": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 5
+  },
+  "mode + speed + motor": {
+    "moved": true,
+    "delta": 113.3,
+    "cmds": 6
+  },
+  "mode + speed + direction": {
+    "moved": true,
+    "delta": 108.7,
+    "cmds": 6
+  },
+  "mode + speed + motor + direction": {
+    "moved": true,
+    "delta": 113.2,
+    "cmds": 8
+  },
+  "mode + speed + motor + direction + commit": {
+    "moved": true,
+    "delta": 113.2,
+    "cmds": 9
+  },
+  "mode + speed + motor + commit": {
+    "moved": true,
+    "delta": 113.2,
+    "cmds": 7
+  },
+  "mode + speed + direction + commit": {
+    "moved": true,
+    "delta": 108.9,
+    "cmds": 7
+  },
+  "mode + P + speed + P + motor + P + dir + commit": {
+    "moved": true,
+    "delta": 113.2,
+    "cmds": 12
+  },
+  "mode=1 + speed + motor + dir + commit": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 9
+  },
+  "mode=3 + speed + motor + dir + commit": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 9
+  },
+  "mode=4 + speed + motor + dir + commit": {
+    "moved": false,
+    "delta": 0.0,
+    "cmds": 9
+  },
+  "mode=6 + speed + motor + dir + commit": {
+    "moved": false,
+    "delta": 0.1,
+    "cmds": 9
+  }
+}

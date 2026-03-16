@@ -1,0 +1,56 @@
+{
+  "find_end_positions_phase1": {
+    "pre_pct": 99.5,
+    "post_pct": -14.1,
+    "min_pct": -14.1,
+    "max_pct": -14.1,
+    "delta": 113.6,
+    "moved": true,
+    "can_responses": []
+  },
+  "find_end_positions_phase2_reverse": {
+    "pre_pct": -14.1,
+    "post_pct": -14.1,
+    "min_pct": -14.1,
+    "max_pct": -14.1,
+    "delta": 0.0,
+    "moved": false,
+    "can_responses": []
+  },
+  "find_end_positions_phase3_cleanup": {
+    "pre_pct": -14.1,
+    "post_pct": 99.1,
+    "min_pct": -3.6,
+    "max_pct": 99.2,
+    "delta": 113.3,
+    "moved": true,
+    "can_responses": []
+  },
+  "minimal_motor_enable": {
+    "pre_pct": 99.1,
+    "post_pct": 99.2,
+    "min_pct": 99.1,
+    "max_pct": 99.2,
+    "delta": 0.1,
+    "moved": false,
+    "can_responses": []
+  },
+  "minimal_motor_direction": {
+    "pre_pct": 99.2,
+    "post_pct": 99.2,
+    "min_pct": 99.1,
+    "max_pct": 99.2,
+    "delta": 0.1,
+    "moved": false,
+    "can_responses": []
+  },
+  "reg_0163_val40": {
+    "pre_pct": 99.2,
+    "post_pct": 99.2,
+    "min_pct": 99.1,
+    "max_pct": 99.2,
+    "delta": 0.1,
+    "moved": false,
+    "can_responses": []
+  }
+}
