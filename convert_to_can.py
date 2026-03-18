@@ -243,7 +243,7 @@ def find_rotation_offset(bus):
         while time.time() - start < 1.5:
             bus.send(can.Message(
                 is_extended_id=False, arbitration_id=CMD_CAN_ID,
-                data=bytearray([0, 0, 0, 0, 0, 0, 0, 0])
+                data=bytearray([0x00, 0x00, 0, 0, 0, 0, 0, 0])
             ))
             msg = bus.recv(timeout=0.015)
             if msg and msg.arbitration_id == BROADCAST_CAN_ID and len(msg.data) >= 4:
@@ -267,7 +267,7 @@ def find_rotation_offset(bus):
             while time.time() - start < 1.5:
                 bus.send(can.Message(
                     is_extended_id=False, arbitration_id=CMD_CAN_ID,
-                    data=bytearray([0, 0, 0, 0, 0, 0, 0, 0])
+                    data=bytearray([0x00, 0x00, 0, 0, 0, 0, 0, 0])
                 ))
                 msg = bus.recv(timeout=0.015)
                 if msg and msg.arbitration_id == BROADCAST_CAN_ID and len(msg.data) >= 4:
@@ -382,6 +382,8 @@ def main():
             # Command CAN ID
             (0x24, cmd_hi, f"Command CAN ID high (0x{CMD_CAN_ID:03X})"),
             (0x25, cmd_lo, f"Command CAN ID low"),
+            # Command format (0x06 = 16-bit commands)
+            (0x26, 0x06, "Command format (16-bit)"),
             # Broadcast CAN ID
             (0x27, bcast_hi, f"Broadcast CAN ID high (0x{BROADCAST_CAN_ID:03X})"),
             (0x28, bcast_lo, f"Broadcast CAN ID low"),
@@ -392,6 +394,7 @@ def main():
             (0x46, max_pos & 0xFF, "Mirror max low"),
             (0x64, cmd_hi, "Mirror command CAN ID high"),
             (0x65, cmd_lo, "Mirror command CAN ID low"),
+            (0x66, 0x06, "Mirror command format"),
             (0x67, bcast_hi, "Mirror broadcast CAN ID high"),
             (0x68, bcast_lo, "Mirror broadcast CAN ID low"),
         ]
@@ -477,20 +480,22 @@ def main():
         print()
 
         test_ok = True
-        for cmd_val in [0, 125, 250, 0]:
+        for cmd_val in [0, 500, 1000, 0]:
+            hi = (cmd_val >> 8) & 0xFF
+            lo = cmd_val & 0xFF
             start = time.time()
             last_pos = None
             while time.time() - start < 2.0:
                 bus.send(can.Message(
                     is_extended_id=False, arbitration_id=CMD_CAN_ID,
-                    data=bytearray([cmd_val, 0, 0, 0, 0, 0, 0, 0])
+                    data=bytearray([hi, lo, 0, 0, 0, 0, 0, 0])
                 ))
                 msg = bus.recv(timeout=0.015)
                 if msg and msg.arbitration_id == BROADCAST_CAN_ID and len(msg.data) >= 4:
                     last_pos = (msg.data[2] << 8) | msg.data[3]
                 time.sleep(0.005)
 
-            expected_approx = cmd_val * 4
+            expected_approx = cmd_val
             close = abs(last_pos - expected_approx) < 20 if last_pos else False
             status = "OK" if close else "UNEXPECTED"
             if not close:

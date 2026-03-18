@@ -13,6 +13,7 @@ Tested on a G-222 (6NW008412) with L9805E chip, 2026-03-16.
 | 0x22 | 34        | 0x00(0)  | 0xD0(208)| 0x62   | Rotation offset          |
 | 0x24 | 36        | 0x00(0)  | 0x9D(157)| 0x64   | Command CAN ID high      |
 | 0x25 | 37        | 0x08(8)  | 0x48(72) | 0x65   | Command CAN ID low       |
+| 0x26 | 38        | 0x00(0)  | 0x06(6)  | 0x66   | Command format (0x06=16-bit) |
 | 0x27 | 39        | 0xCB(203)| 0x9D(157)| 0x67   | Broadcast CAN ID high    |
 | 0x28 | 40        | 0x08(8)  | 0x68(104)| 0x68   | Broadcast CAN ID low     |
 | 0x29 | 41        | 0x62(98) | 0x2A(42) | 0x69   | Mode register            |
@@ -32,7 +33,24 @@ All changes must also be written to the mirror address.
 
 ## Position Command Format
 
-Send on **0x4EA** every ~20ms (watchdog timeout if commands stop):
+Send on **0x4EA** every <50ms (watchdog timeout ~50ms):
+
+### 16-bit mode (0x26=0x06, recommended)
+
+```
+Byte[0-1] = 16-bit position (big-endian), 0-1000
+Byte[2-7] = 0x00
+```
+
+| Command | Behavior                               |
+|---------|----------------------------------------|
+| 0       | Full travel to min endstop             |
+| 500     | Approximately 50% travel               |
+| 1000    | Full travel to max endstop             |
+
+Position feedback tracks command ~1:1 (cmd=600 → feedback≈602).
+
+### 8-bit mode (0x26=0x00, legacy)
 
 ```
 Byte[0] = position command (0-250)
@@ -46,6 +64,8 @@ Byte[1-7] = 0x00
 | 250     | Full travel to max endstop             |
 | 251-255 | Return to default/rest position        |
 
+Position feedback = command * 4 (approximately). Range: 0 to ~1000.
+
 ## Position Feedback Format
 
 Broadcast on **0x4EB** every ~20ms:
@@ -53,14 +73,11 @@ Broadcast on **0x4EB** every ~20ms:
 ```
 Byte[0]   = 0x00 when commanded, other values when idle
 Byte[1]   = 0x08 when idle, 0x00 when actively commanded
-Byte[2-3] = 16-bit position (big-endian) = command * 4
+Byte[2-3] = 16-bit position (big-endian), 0-1000
 Byte[4]   = 0x00
-Byte[5]   = ~0x1C (unknown, nearly constant)
+Byte[5]   = ~0x1C (temperature?)
 Byte[6-7] = 0x00
 ```
-
-Position feedback = command value * 4 (approximately).
-Full range: 0 to ~1000 in feedback units.
 
 ## CAN ID EEPROM Encoding
 
