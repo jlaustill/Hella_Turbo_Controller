@@ -21,7 +21,8 @@ CAN IDs are stored across two bytes:
 
 Decode CAN ID: `high_byte * 8 + (low_byte >> 5)`
 
-**The lower 5 bits of the low byte MUST be set to 0x08 for normal operation.** Setting to 0x00 produces zero-length CAN frames.
+**Confirmed: The lower 5 bits of the low byte directly control CAN frame DLC (0=0 bytes, 8=8 bytes).**
+Tested values 0-8: each produces exactly that many bytes in the broadcast frame. Must be 0x08 for normal 8-byte operation.
 
 ## Byte Map
 
@@ -37,7 +38,7 @@ Decode CAN ID: `high_byte * 8 + (low_byte >> 5)`
 | 0x07(7)   | 0xFF(255)  | 0xFF(255)   | 0xFF(255)   |             |                                |                                        | Same across all units (0xFF)                                        |
 | 0x08(8)   | 0xFF(255)  | 0xFF(255)   | 0xFF(255)   |             |                                |                                        | Same across all units (0xFF)                                        |
 | 0x09(9)   | 0xCB(203)  | 0xCB(203)   | 0x7D(125)   |             | Programming response CAN ID hi |                                        | G-222=0x3E8, G-221=0x658. Used for EEPROM reads + init responses.   |
-| 0x0A(10)  | 0x08(8  )  | 0x08(8  )   | 0x08(8  )   |             | Programming response CAN ID lo |                                        | Bits 7-5=CAN ID, bits 4-0=DLC config (0x08=8-byte frames).         |
+| 0x0A(10)  | 0x08(8  )  | 0x08(8  )   | 0x08(8  )   |             | Programming response CAN ID lo |                                        | Bits 7-5=CAN ID, bits 4-0=DLC (confirmed 0-8 = frame bytes)        |
 | 0x0B(11)  | 0xCE(206)  | 0xCE(206)   | 0xCE(206)   |             |                                | Shared/diagnostic CAN ID high          | Both units decode to 0x670                                          |
 | 0x0C(12)  | 0x0A(10 )  | 0x0A(10 )   | 0x0A(10 )   |             |                                | Shared/diagnostic CAN ID low           | See 0x0B                                                            |
 | 0x0D(13)  | 0x01(1  )  | 0x01(1  )   | 0x01(1  )   |             |                                |                                        | Same across all units (0x01)                                        |
@@ -63,11 +64,11 @@ Decode CAN ID: `high_byte * 8 + (low_byte >> 5)`
 | 0x21(33)  | 0x15(21 )  | 0x15(21 )   | 0x15(21 )   |             |                                |                                        | Same across all units (0x15)                                        |
 | 0x22(34)  | 0xAA(170)  | 0xAA(170)   | 0x00(0  )   |             |                                | Rotation offset                        | Calibrates pos=0 at min endstop. Scale: ~4 units per position count |
 | 0x23(35)  | 0x2C(44 )  | 0x22(34 )   | 0x2D(45 )   |             |                                | Config (near range)                    | All three values differ                                             |
-| 0x24(36)  | 0x9D(157)  | 0x9D(157)   | 0x00(0  )   |             |                                | Position command CAN ID high           | G-221=0x4EA, G-222=0x000. Required (with 0x29) for CAN pos ctrl.    |
-| 0x25(37)  | 0x48(72 )  | 0x48(72 )   | 0x08(8  )   |             |                                | Position command CAN ID low            | Bits 7-5=CAN ID, bits 4-0=DLC (0x08=8-byte). Must be 0x48 not 0x40 |
+| 0x24(36)  | 0x9D(157)  | 0x9D(157)   | 0x00(0  )   |             | Position command CAN ID high   |                                        | G-221=0x4EA, G-222=0x000. Required (with 0x29) for CAN pos ctrl.    |
+| 0x25(37)  | 0x48(72 )  | 0x48(72 )   | 0x08(8  )   |             | Position command CAN ID low    |                                        | Bits 7-5=CAN ID, bits 4-0=DLC (confirmed 0-8 = frame bytes)        |
 | 0x26(38)  | 0x06(6  )  | 0x06(6  )   | 0x00(0  )   |             |                                | Config block                           | G-221s match (0x06), G-222=0x00                                     |
 | 0x27(39)  | 0x9D(157)  | 0x9D(157)   | 0xCB(203)   |             | Position broadcast CAN ID high |                                        | G-222=0x658, G-221=0x4EB. Encoding: byte*8+(next_byte>>5)           |
-| 0x28(40)  | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             | Position broadcast CAN ID low  |                                        | Bits 7-5=CAN ID, bits 4-0=DLC (0x08=8-byte). Must be 0x68 not 0x60 |
+| 0x28(40)  | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             | Position broadcast CAN ID low  |                                        | Bits 7-5=CAN ID, bits 4-0=DLC (confirmed 0-8 = frame bytes)        |
 | 0x29(41)  | 0x2A(42 )  | 0x2A(42 )   | 0x62(98 )   |             |                                | Mode register                          | Enum, not bitmask. 0x62/0x2A/0x00 accepted, 0x72/0x6A rejected.     |
 | 0x2A(42)  | 0xA0(160)  | 0xA0(160)   | 0xA0(160)   |             |                                |                                        | Same across all units (0xA0)                                        |
 | 0x2B(43)  | 0x96(150)  | 0x96(150)   | 0x96(150)   |             |                                |                                        | Same across all units (0x96)                                        |
