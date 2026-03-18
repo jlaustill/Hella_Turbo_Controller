@@ -14,7 +14,14 @@
 - Addresses 0x0F-0x1F: Write-protected, managed by actuator firmware
 
 ## CAN ID Encoding
-CAN IDs are stored as 11-bit values packed across two bytes: `high_byte * 8 + (low_byte >> 5)`
+CAN IDs are stored across two bytes:
+- **High byte**: `CAN_ID >> 3` (upper 8 bits of 11-bit CAN ID)
+- **Low byte bits 7-5**: `(CAN_ID & 0x07) << 5` (lower 3 bits of CAN ID)
+- **Low byte bits 4-0**: Frame DLC configuration (0x08 = 8-byte frames, 0x00 = zero-length frames)
+
+Decode CAN ID: `high_byte * 8 + (low_byte >> 5)`
+
+**The lower 5 bits of the low byte MUST be set to 0x08 for normal operation.** Setting to 0x00 produces zero-length CAN frames.
 
 ## Byte Map
 
@@ -30,7 +37,7 @@ CAN IDs are stored as 11-bit values packed across two bytes: `high_byte * 8 + (l
 | 0x07(7)   | 0xFF(255)  | 0xFF(255)   | 0xFF(255)   |             |                                |                                        | Same across all units (0xFF)                                        |
 | 0x08(8)   | 0xFF(255)  | 0xFF(255)   | 0xFF(255)   |             |                                |                                        | Same across all units (0xFF)                                        |
 | 0x09(9)   | 0xCB(203)  | 0xCB(203)   | 0x7D(125)   |             | Programming response CAN ID hi |                                        | G-222=0x3E8, G-221=0x658. Used for EEPROM reads + init responses.   |
-| 0x0A(10)  | 0x08(8  )  | 0x08(8  )   | 0x08(8  )   |             | Programming response CAN ID lo |                                        | See 0x09. TX=this+8, Ready=this+3 (derived, not confirmed).         |
+| 0x0A(10)  | 0x08(8  )  | 0x08(8  )   | 0x08(8  )   |             | Programming response CAN ID lo |                                        | Bits 7-5=CAN ID, bits 4-0=DLC config (0x08=8-byte frames).         |
 | 0x0B(11)  | 0xCE(206)  | 0xCE(206)   | 0xCE(206)   |             |                                | Shared/diagnostic CAN ID high          | Both units decode to 0x670                                          |
 | 0x0C(12)  | 0x0A(10 )  | 0x0A(10 )   | 0x0A(10 )   |             |                                | Shared/diagnostic CAN ID low           | See 0x0B                                                            |
 | 0x0D(13)  | 0x01(1  )  | 0x01(1  )   | 0x01(1  )   |             |                                |                                        | Same across all units (0x01)                                        |
@@ -54,13 +61,13 @@ CAN IDs are stored as 11-bit values packed across two bytes: `high_byte * 8 + (l
 | 0x1F(31)  | 0x00(0  )  | 0x08(8  )   | 0x20(32 )   |             |                                | Actuator-managed                       | Write-protected (0x0F-0x1F region), changes during motor ops        |
 | 0x20(32)  | 0x34(52 )  | 0x34(52 )   | 0x34(52 )   |             |                                |                                        | Same across all units (0x34)                                        |
 | 0x21(33)  | 0x15(21 )  | 0x15(21 )   | 0x15(21 )   |             |                                |                                        | Same across all units (0x15)                                        |
-| 0x22(34)  | 0xAA(170)  | 0xAA(170)   | 0x00(0  )   |             |                                | Range calibration                      | G-222=0x00, G-221s=0xAA. Written by set_min()/set_max()             |
+| 0x22(34)  | 0xAA(170)  | 0xAA(170)   | 0x00(0  )   |             |                                | Rotation offset                        | Calibrates pos=0 at min endstop. Scale: ~4 units per position count |
 | 0x23(35)  | 0x2C(44 )  | 0x22(34 )   | 0x2D(45 )   |             |                                | Config (near range)                    | All three values differ                                             |
 | 0x24(36)  | 0x9D(157)  | 0x9D(157)   | 0x00(0  )   |             |                                | Position command CAN ID high           | G-221=0x4EA, G-222=0x000. Required (with 0x29) for CAN pos ctrl.    |
-| 0x25(37)  | 0x48(72 )  | 0x48(72 )   | 0x08(8  )   |             |                                | Position command CAN ID low            | See 0x24. Both 0x24-25 AND 0x29 must change together.               |
+| 0x25(37)  | 0x48(72 )  | 0x48(72 )   | 0x08(8  )   |             |                                | Position command CAN ID low            | Bits 7-5=CAN ID, bits 4-0=DLC (0x08=8-byte). Must be 0x48 not 0x40 |
 | 0x26(38)  | 0x06(6  )  | 0x06(6  )   | 0x00(0  )   |             |                                | Config block                           | G-221s match (0x06), G-222=0x00                                     |
 | 0x27(39)  | 0x9D(157)  | 0x9D(157)   | 0xCB(203)   |             | Position broadcast CAN ID high |                                        | G-222=0x658, G-221=0x4EB. Encoding: byte*8+(next_byte>>5)           |
-| 0x28(40)  | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             | Position broadcast CAN ID low  |                                        | See 0x27                                                            |
+| 0x28(40)  | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             | Position broadcast CAN ID low  |                                        | Bits 7-5=CAN ID, bits 4-0=DLC (0x08=8-byte). Must be 0x68 not 0x60 |
 | 0x29(41)  | 0x2A(42 )  | 0x2A(42 )   | 0x62(98 )   |             |                                | Mode register                          | Enum, not bitmask. 0x62/0x2A/0x00 accepted, 0x72/0x6A rejected.     |
 | 0x2A(42)  | 0xA0(160)  | 0xA0(160)   | 0xA0(160)   |             |                                |                                        | Same across all units (0xA0)                                        |
 | 0x2B(43)  | 0x96(150)  | 0x96(150)   | 0x96(150)   |             |                                |                                        | Same across all units (0x96)                                        |
@@ -94,7 +101,7 @@ CAN IDs are stored as 11-bit values packed across two bytes: `high_byte * 8 + (l
 | 0x47(71)  | 0xFF(255)  | 0xFF(255)   | 0xFF(255)   |             |                                |                                        | Mirrors 0x07 (0xFF)                                                 |
 | 0x48(72)  | 0xFF(255)  | 0xFF(255)   | 0xFF(255)   |             |                                |                                        | Mirrors 0x08 (0xFF)                                                 |
 | 0x49(73)  | 0xCB(203)  | 0xCB(203)   | 0x7D(125)   |             |                                | Mirror: Programming response CAN ID hi | Mirrors 0x09                                                        |
-| 0x4A(74)  | 0x08(8  )  | 0x08(8  )   | 0x08(8  )   |             |                                | Mirror: Programming response CAN ID lo | Mirrors 0x0A                                                        |
+| 0x4A(74)  | 0x08(8  )  | 0x08(8  )   | 0x08(8  )   |             |                                | Mirror: Programming response CAN ID lo | Mirrors 0x0A. Lower 5 bits = DLC config.                            |
 | 0x4B(75)  | 0xCE(206)  | 0xCE(206)   | 0xCE(206)   |             |                                | Mirror: Shared CAN ID high             | Mirrors 0x0B                                                        |
 | 0x4C(76)  | 0x0A(10 )  | 0x0A(10 )   | 0x0A(10 )   |             |                                | Mirror: Shared CAN ID low              | Mirrors 0x0C                                                        |
 | 0x4D(77)  | 0x01(1  )  | 0x01(1  )   | 0x01(1  )   |             |                                |                                        | Mirrors 0x0D (0x01)                                                 |
@@ -118,13 +125,13 @@ CAN IDs are stored as 11-bit values packed across two bytes: `high_byte * 8 + (l
 | 0x5F(95)  | 0x0E(14 )  | 0x08(8  )   | 0x05(5  )   |             |                                | Factory calibration                    | Differs per unit, likely factory-set. Not mirrored from first half. |
 | 0x60(96)  | 0x34(52 )  | 0x34(52 )   | 0x34(52 )   |             |                                |                                        | Mirrors 0x20 (0x34)                                                 |
 | 0x61(97)  | 0x15(21 )  | 0x15(21 )   | 0x15(21 )   |             |                                |                                        | Mirrors 0x21 (0x15)                                                 |
-| 0x62(98)  | 0xAA(170)  | 0xAA(170)   | 0x00(0  )   |             |                                | Mirror: Range calibration              | Mirrors 0x22                                                        |
+| 0x62(98)  | 0xAA(170)  | 0xAA(170)   | 0x00(0  )   |             |                                | Mirror: Rotation offset                | Mirrors 0x22                                                        |
 | 0x63(99)  | 0x2C(44 )  | 0x22(34 )   | 0x2D(45 )   |             |                                | Mirror: Config                         | Mirrors 0x23                                                        |
 | 0x64(100) | 0x9D(157)  | 0x9D(157)   | 0x00(0  )   |             |                                | Mirror: Position command CAN ID high   | Mirrors 0x24. Must be written with 0x24.                            |
-| 0x65(101) | 0x48(72 )  | 0x48(72 )   | 0x08(8  )   |             |                                | Mirror: Position command CAN ID low    | Mirrors 0x25. Must be written with 0x25.                            |
+| 0x65(101) | 0x48(72 )  | 0x48(72 )   | 0x08(8  )   |             |                                | Mirror: Position command CAN ID low    | Mirrors 0x25. Lower 5 bits = DLC config.                            |
 | 0x66(102) | 0x06(6  )  | 0x06(6  )   | 0x00(0  )   |             |                                | Mirror: Config block                   | Mirrors 0x26                                                        |
 | 0x67(103) | 0x9D(157)  | 0x9D(157)   | 0xCB(203)   |             |                                | Mirror: Position broadcast CAN ID high | Mirrors 0x27                                                        |
-| 0x68(104) | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             |                                | Mirror: Position broadcast CAN ID low  | Mirrors 0x28                                                        |
+| 0x68(104) | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             |                                | Mirror: Position broadcast CAN ID low  | Mirrors 0x28. Lower 5 bits = DLC config.                            |
 | 0x69(105) | 0x2A(42 )  | 0x2A(42 )   | 0x62(98 )   |             |                                | Mirror: Mode register                  | Mirrors 0x29. Enum, not bitmask.                                    |
 | 0x6A(106) | 0xA0(160)  | 0xA0(160)   | 0xA0(160)   |             |                                |                                        | Mirrors 0x2A (0xA0)                                                 |
 | 0x6B(107) | 0x96(150)  | 0x96(150)   | 0x96(150)   |             |                                |                                        | Mirrors 0x2B (0x96)                                                 |

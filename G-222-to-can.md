@@ -62,16 +62,50 @@ Byte[6-7] = 0x00
 Position feedback = command value * 4 (approximately).
 Full range: 0 to ~1000 in feedback units.
 
+## CAN ID EEPROM Encoding
+
+CAN IDs are stored across two bytes with the following bit layout:
+
+```
+High byte: CAN_ID >> 3       (upper 8 bits of the 11-bit CAN ID)
+Low byte:  (CAN_ID & 0x07) << 5 | DLC_CONFIG
+           ├── bits 7-5: lower 3 bits of the 11-bit CAN ID
+           └── bits 4-0: frame DLC configuration (0x08 = 8-byte frames)
+```
+
+Decode: `CAN_ID = high_byte * 8 + (low_byte >> 5)`
+
+**The lower 5 bits of the low byte control the CAN frame data length.**
+Setting them to 0x00 produces zero-length frames. Must be 0x08 for normal 8-byte frames.
+
+Example: 0x4EA = high=0x9D, low=0x48 (0x40 for ID bits + 0x08 for DLC)
+
+## Rotation Offset (0x22)
+
+Calibrates the position sensor so that position feedback reads 0 at the min endstop.
+The scale is approximately **1 position count per 4 units of 0x22** (x4 scale).
+
+| 0x22 value | cmd=0 feedback | Notes |
+|------------|---------------|-------|
+| 0x00 (0)   | 1001          | Overflow — way too low |
+| 0xC0 (192) | 41            | Getting closer |
+| 0xD0 (208) | 0             | Correct for first G-222 |
+| 0xDC (220) | 3             | Slightly over |
+| 0xE0 (224) | 4             | Over by 4 counts |
+
+This value is **unit-specific** — depends on physical sensor/magnet alignment in the gearbox.
+The `convert_to_can.py` script auto-calibrates this by sweeping values until cmd=0 gives pos=0.
+
 ## Key Notes
 
 - **Mode register (0x29)** is an enum, not a bitmask. Only specific values are accepted:
   - 0x62 = PWM mode (original G-222)
   - 0x2A = CAN position control mode
   - 0x72 and 0x6A are rejected by firmware
-- **Rotation offset (0x22)** calibrates the position sensor to report 0 at the min endstop.
-  Value is unit-specific — depends on physical sensor alignment. 0xD0 is correct for this G-222.
 - **Min/max positions** should be set to actual physical endstops using the register-level
   motor drive (mode=5, register 0x63). Values are unit-specific.
+- **Watchdog timeout** is ~50ms. Commands must be sent at least every 50ms or the
+  actuator returns to its default rest position.
 - **Power cycle required** after changing mode register (0x29) for it to take full effect.
 - **Broadcast ID change takes effect immediately** without power cycle.
 - EEPROM backup saved as `G-222-canmode.bin`.
