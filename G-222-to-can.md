@@ -19,6 +19,21 @@ Tested on a G-222 (6NW008412) with L9805E chip, 2026-03-16.
 | 0x29 | 41        | 0x62(98) | 0x2A(42) | 0x69   | Mode register            |
 
 All changes must also be written to the mirror address.
+
+## Default/Fallback Position (0x23)
+
+EEPROM address 0x23 (mirror 0x63) controls where the actuator returns to when CAN commands
+stop (watchdog timeout) or when no commands have been received.
+
+| Value | Behavior |
+|-------|----------|
+| 0     | Returns to min endstop |
+| ~40   | Start of usable range |
+| 100   | Approximately 50% travel |
+| ~200  | Clamped at max endstop |
+
+Scale is approximately the same as 8-bit command mode (0-200 usable range).
+G-222 original value: 45. G-221 original value: 34.
 0x03 and 0x05 (min/max high bytes) were already 0x00 and 0x03 respectively — unchanged.
 
 ## CAN ID Summary
