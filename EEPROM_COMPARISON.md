@@ -14,6 +14,21 @@
 - Addresses 0x0F-0x1F: Write-protected, managed by actuator firmware
 
 ## CAN ID Encoding
+## Position Broadcast Frame Format (0x4EB / 0x658)
+
+Confirmed by testing on G-221 and G-222:
+
+| Byte | Description | Confirmed |
+|------|-------------|-----------|
+| 0 | Unknown status | No |
+| 1 | Command watchdog: 0x08 = no commands >50ms, 0x00 = actively commanded | Yes |
+| 2-3 | 16-bit position (big-endian), 0-1000 | Yes |
+| 4 | Unknown (0x00) | No |
+| 5 | Unknown (~0x1C, nearly constant) | No |
+| 6-7 | 16-bit motor load/current (big-endian), 0 at rest, climbs under resistance | Yes |
+
+## CAN ID Encoding
+
 CAN IDs are stored across two bytes:
 - **High byte**: `CAN_ID >> 3` (upper 8 bits of 11-bit CAN ID)
 - **Low byte bits 7-5**: `(CAN_ID & 0x07) << 5` (lower 3 bits of CAN ID)

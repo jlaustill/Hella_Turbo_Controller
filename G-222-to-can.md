@@ -71,13 +71,19 @@ Position feedback = command * 4 (approximately). Range: 0 to ~1000.
 Broadcast on **0x4EB** every ~20ms:
 
 ```
-Byte[0]   = 0x00 when commanded, other values when idle
-Byte[1]   = 0x08 when idle, 0x00 when actively commanded
+Byte[0]   = unknown status byte
+Byte[1]   = 0x08 when no commands received (>50ms), 0x00 when actively commanded
 Byte[2-3] = 16-bit position (big-endian), 0-1000
 Byte[4]   = 0x00
-Byte[5]   = ~0x1C (temperature?)
-Byte[6-7] = 0x00
+Byte[5]   = ~0x1C (unknown, nearly constant)
+Byte[6-7] = 16-bit motor load/current (big-endian), 0 at rest, increases under load
 ```
+
+Motor load (bytes 6-7):
+- 0 when at target position and stationary
+- Spikes during acceleration (~2000+)
+- Increases proportionally when motor is working against resistance
+- Confirmed by physically holding the arm — load climbs steadily as motor pushes harder
 
 ## CAN ID EEPROM Encoding
 
