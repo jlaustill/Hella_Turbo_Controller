@@ -24,7 +24,7 @@ Confirmed by testing on G-221 and G-222:
 | 1 | Command watchdog: 0x08 = no commands >50ms, 0x00 = actively commanded | Yes |
 | 2-3 | 16-bit position (big-endian), 0-1000 | Yes |
 | 4 | Unknown (0x00) | No |
-| 5 | Unknown (~0x1C, nearly constant) | No |
+| 5 | Temperature in °C (1:1 scale, confirmed with heat gun) | Yes |
 | 6-7 | 16-bit motor load/current (big-endian), 0 at rest, climbs under resistance | Yes |
 
 ## CAN ID Encoding
@@ -85,6 +85,7 @@ Tested values 0-8: each produces exactly that many bytes in the broadcast frame.
 | 0x27(39)  | 0x9D(157)  | 0x9D(157)   | 0xCB(203)   |             | Position broadcast CAN ID high |                                        | G-222=0x658, G-221=0x4EB. Encoding: byte*8+(next_byte>>5)           |
 | 0x28(40)  | 0x68(104)  | 0x68(104)   | 0x08(8  )   |             | Position broadcast CAN ID low  |                                        | Bits 7-5=CAN ID, bits 4-0=DLC (confirmed 0-8 = frame bytes)        |
 | 0x29(41)  | 0x2A(42 )  | 0x2A(42 )   | 0x62(98 )   |             |                                | Mode register                          | Enum, not bitmask. 0x62/0x2A/0x00 accepted, 0x72/0x6A rejected.     |
+
 | 0x2A(42)  | 0xA0(160)  | 0xA0(160)   | 0xA0(160)   |             |                                |                                        | Same across all units (0xA0)                                        |
 | 0x2B(43)  | 0x96(150)  | 0x96(150)   | 0x96(150)   |             |                                |                                        | Same across all units (0x96)                                        |
 | 0x2C(44)  | 0x32(50 )  | 0x32(50 )   | 0x06(6  )   |             |                                | Config byte                            | G-221s=0x32, G-222=0x06                                             |
@@ -107,6 +108,7 @@ Tested values 0-8: each produces exactly that many bytes in the broadcast frame.
 | 0x3D(61)  | 0x8E(142)  | 0x8E(142)   | 0x8E(142)   |             |                                |                                        | Same across all units (0x8E)                                        |
 | 0x3E(62)  | 0x01(1  )  | 0x01(1  )   | 0x01(1  )   |             |                                |                                        | Same across all units (0x01)                                        |
 | 0x3F(63)  | 0xB0(176)  | 0xAE(174)   | 0xAC(172)   |             |                                | Config byte                            | All three values differ slightly                                    |
+
 | 0x40(64)  | 0x07(7  )  | 0x05(5  )   | 0x05(5  )   |             |                                | Mirror: Device ID high                 | Mirrors 0x00                                                        |
 | 0x41(65)  | 0xB2(178)  | 0x1E(30 )   | 0x0E(14 )   |             |                                | Mirror: Device ID low                  | Mirrors 0x01                                                        |
 | 0x42(66)  | 0x55(85 )  | 0x55(85 )   | 0x55(85 )   |             |                                |                                        | Mirrors 0x02 (0x55)                                                 |

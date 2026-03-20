@@ -90,7 +90,7 @@ Byte[0]   = unknown status byte
 Byte[1]   = 0x08 when no commands received (>50ms), 0x00 when actively commanded
 Byte[2-3] = 16-bit position (big-endian), 0-1000
 Byte[4]   = 0x00
-Byte[5]   = ~0x1C (unknown, nearly constant)
+Byte[5]   = temperature in °C (1:1 scale, e.g. 0x19 = 25°C)
 Byte[6-7] = 16-bit motor load/current (big-endian), 0 at rest, increases under load
 ```
 
