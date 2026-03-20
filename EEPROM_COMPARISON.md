@@ -88,10 +88,14 @@ Tested values 0-8: each produces exactly that many bytes in the broadcast frame.
 
 | 0x2A(42)  | 0xA0(160)  | 0xA0(160)   | 0xA0(160)   |             |                                |                                        | Same across all units (0xA0)                                        |
 | 0x2B(43)  | 0x96(150)  | 0x96(150)   | 0x96(150)   |             |                                |                                        | Same across all units (0x96)                                        |
+
+
 | 0x2C(44)  | 0x32(50 )  | 0x32(50 )   | 0x06(6  )   |             |                                | Config byte                            | G-221s=0x32, G-222=0x06                                             |
 | 0x2D(45)  | 0x02(2  )  | 0x02(2  )   | 0x02(2  )   |             |                                |                                        | Same across all units (0x02)                                        |
 | 0x2E(46)  | 0x1F(31 )  | 0x1F(31 )   | 0x1D(29 )   |             |                                | Config byte                            | G-221s=0x1F, G-222=0x1D                                             |
 | 0x2F(47)  | 0x09(9  )  | 0x09(9  )   | 0x09(9  )   |             |                                |                                        | Same across all units (0x09)                                        |
+
+
 | 0x30(48)  | 0x00(0  )  | 0x00(0  )   | 0x00(0  )   |             |                                |                                        | Same across all units (0x00)                                        |
 | 0x31(49)  | 0x2C(44 )  | 0x2D(45 )   | 0x2A(42 )   |             |                                | Config byte                            | All three values differ slightly                                    |
 | 0x32(50)  | 0x03(3  )  | 0x03(3  )   | 0x03(3  )   |             |                                |                                        | Same across all units (0x03)                                        |
